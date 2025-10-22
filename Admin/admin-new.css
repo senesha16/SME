@@ -1,0 +1,351 @@
+/* Shared visual styles for Pending lists (Pending Approvals / Pending Subscription) */
+ 
+/* layout spacing */
+.pending-grid { gap: 22px; }
+ 
+/* Card surface: solid white, rounded, soft shadow, hover lift */
+.pending-card {
+    background: #ffffff;
+    border: 1px solid rgba(15,23,42,0.04);
+    box-shadow: 0 8px 24px rgba(12,18,22,0.06);
+    transition: transform 180ms ease, box-shadow 180ms ease;
+    border-radius: 12px;
+    overflow: hidden;
+}
+ 
+/* Lift on hover/focus for better affordance */
+.pending-card:hover,
+.pending-card:focus-within {
+    transform: translateY(-6px);
+    box-shadow: 0 20px 40px rgba(12,18,22,0.10);
+}
+ 
+/* Thumbnail: neat card-within-card feel */
+.pending-thumb {
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid rgba(15,23,42,0.04);
+    background: #ffffff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+.pending-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+ 
+/* Title / meta */
+.pending-title h3 { font-size: 1.05rem; margin: 0 0 6px 0; font-weight:700; color:#0f172a; }
+.pending-meta { color: var(--muted, #7f8c8d); font-size:0.88rem; display:flex; gap:8px; flex-wrap:wrap; }
+ 
+/* Action buttons (approve/reject) */
+.action-btn {
+    display:inline-flex; align-items:center; justify-content:center;
+    padding:8px 12px; border-radius:10px; font-weight:700; color:#fff; border:0; cursor:pointer;
+    transition: transform .14s ease, box-shadow .14s ease;
+    box-shadow: 0 8px 22px rgba(0,0,0,0.06);
+}
+.action-btn.action-approve { background: linear-gradient(135deg,#34d399,#10b981); }
+.action-btn.action-reject  { background: linear-gradient(135deg,#E94B4B,#D22A2A); }
+.action-btn i { font-size:14px; color:#fff; }
+ 
+/* Compact grid-mode: make actions icon-only */
+.pending-grid:not(.list-view) .action-btn { width:36px; height:36px; padding:0; font-size:0; border-radius:8px; }
+.pending-grid:not(.list-view) .action-btn i { font-size:16px; }
+ 
+/* Badges */
+.badge-pending {
+    background: linear-gradient(135deg,#FFF9F6,#FFF2E9);
+    color: #B46A00;
+    padding:6px 8px;
+    border-radius:999px;
+    font-weight:700;
+    border: 1px solid rgba(180,106,0,0.06);
+}
+.badge-approved {
+    background: linear-gradient(135deg,#F3FFF7,#E8FFF0);
+    color: #0b6b3a;
+    padding:6px 8px;
+    border-radius:999px;
+    font-weight:700;
+    border: 1px solid rgba(11,107,58,0.06);
+}
+ 
+/* Search input / controls elevated look */
+.dashboard-header .controls .search-input,
+.search-input {
+    background:#fff;
+    padding:8px 12px;
+    border-radius:10px;
+    border:1px solid rgba(15,23,42,0.06);
+    box-shadow: 0 6px 18px rgba(12,18,22,0.04);
+}
+ 
+/* Brand focus styles for search and filter controls */
+.search-input:focus,
+.search-input:active,
+.search-input:focus-visible,
+.dashboard-header .controls .search-input:focus,
+.dashboard-header .controls .search-input:active {
+    outline: none;
+    border-color: #E62727;
+    box-shadow: 0 4px 18px rgba(230,39,39,0.12);
+}
+ 
+.filter-select:focus,
+.filter-select:active,
+.filter-select:focus-visible,
+.dashboard-header .controls .filter-select:focus,
+.dashboard-header .controls .filter-select:active {
+    outline: none;
+    border-color: #E62727;
+    box-shadow: 0 4px 18px rgba(230,39,39,0.08);
+}
+ 
+/* Add pill-style filter select and ensure focus retains brand color */
+.filter-select,
+.dashboard-header .controls .filter-select {
+    border-radius: 10px; /* match search input roundness */
+    padding: 8px 12px;
+    border: 1px solid rgba(15,23,42,0.06);
+    background: #fff;
+}
+ 
+/* keep brand focus but respect rounded corners */
+.filter-select:focus,
+.filter-select:active,
+.filter-select:focus-visible,
+.dashboard-header .controls .filter-select:focus,
+.dashboard-header .controls .filter-select:active {
+    outline: none;
+    border-color: #E62727;
+    box-shadow: 0 4px 18px rgba(230,39,39,0.08);
+    border-radius: 10px;
+}
+ 
+/* Small-screen tweaks */
+@media (max-width:520px) {
+    .pending-card { padding:10px; }
+    .pending-thumb { border-radius:8px; }
+    .pending-title h3 { font-size:0.98rem; }
+}
+ 
+/* Retriever listing styles — match index / pending subscription visual system */
+.retriever-container {
+    padding: 18px;
+}
+.retriever-card {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+    padding: 16px;
+    border: 1px solid rgba(15,23,42,0.04);
+}
+ 
+/* Header inside card */
+.retriever-card .card-header {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+    margin-bottom:12px;
+}
+.retriever-card .card-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+ 
+/* Table: compact, responsive and matching admin theme */
+.retriever-table {
+    width:100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+.retriever-table th,
+.retriever-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(0,0,0,0.04);
+    /* center all cell content */
+    text-align: center;
+    vertical-align: middle;
+}
+.retriever-table thead th {
+    /* unified header color per request */
+    background: #E62727;
+    color: #ffffff;
+    font-weight: 700;
+    border-bottom: 1px solid rgba(15,23,42,0.06);
+    text-align: center;
+}
+ 
+/* Responsive small screens: stack cells into rows */
+@media (max-width: 720px) {
+    .retriever-table thead { display: none; }
+    .retriever-table, .retriever-table tbody, .retriever-table tr, .retriever-table td { display: block; width: 100%; }
+    .retriever-table tr { margin-bottom: 12px; border-bottom: 1px solid rgba(0,0,0,0.04); padding-bottom: 8px; }
+    .retriever-table td { padding: 8px 0; }
+    .retriever-table td::before {
+        content: attr(data-label);
+        display: block;
+        text-align: center;
+        font-weight: 700;
+        margin-bottom: 4px;
+        color: var(--muted, #7f8c8c);
+    }
+}
+ 
+/* Welcome stats section — shared styles for dashboard overview */
+.welcome-stats {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    /* prevent stacking — keep cards in a single row and allow horizontal scroll on small screens */
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-left: 8px;
+}
+ 
+/* keep each stat compact and prevent wrapping — allow them to sit side-by-side */
+.welcome-stats .stat-card {
+    flex: 0 0 auto;
+    min-width: 140px; /* adjust to taste (120-160) */
+    max-width: 320px;
+}
+ 
+/* reduce min-width on narrow screens so more cards fit before scrolling */
+@media (max-width: 720px) {
+    .welcome-stats .stat-card { min-width: 110px; }
+}
+ 
+/* Approval-specific overrides */
+.pending-approvals .welcome-stats .stat-card {
+    flex: 0 0 calc(33.333% - 8px); /* three cards per row, accounting for gap */
+}
+ 
+/* Pending subscriptions specific styles */
+.pending-subscriptions .welcome-stats .stat-card {
+    flex: 0 0 calc(25% - 9px); /* four cards per row, accounting for gap */
+}
+ 
+/* Report page specific adjustments */
+.reports-page .welcome-stats {
+    padding-left: 0; /* remove padding on left for full-width cards */
+}
+.reports-page .welcome-stats .stat-card {
+    flex: 1 1 100%; /* stack cards full-width */
+    max-width: none;
+    margin-bottom: 12px;
+}
+ 
+/* Desktop-only: make hero/header/cards full-bleed to the left so they visually reach the sidebar.
+   - Applies only when sidebar is expected to be visible (wide screens).
+   - Uses box-sizing to avoid overflow issues.
+*/
+@media (min-width: 981px) {
+    /* target elements inside the page wrapper used across pending/approval/retriever pages */
+    .pending-container .welcome-card,
+    .pending-container .dashboard-header,
+    .pending-container > .card,
+    .main-content .welcome-card,
+    .main-content .dashboard-header,
+    .main-content > .card {
+        /* constrain visual width, center inside .main-content and use reduced padding */
+        max-width: var(--card-max-width);
+        width: 100%;
+        margin-left: auto;
+        margin-right: auto;
+        box-sizing: border-box;
+        padding: var(--panel-padding-sm);
+    }
+}
+ 
+/* Make welcome/headers a bit more compact */
+.welcome-card .welcome-content h1 {
+    font-size: 1.25rem;
+    line-height: 1.15;
+}
+ 
+/* ensure dashboard header uses the compact padding on desktop */
+.main-content .dashboard-header.card,
+.main-content > .card,
+.main-content .welcome-card {
+    padding: var(--panel-padding-sm);
+}
+ 
+/* Retriever page — keep welcome/retriever cards narrower and centered so they don't feel oversized.
+   This only affects pages using the .retriever-container wrapper (e.g. retriever.php). */
+.retriever-container .welcome-card,
+.retriever-container .retriever-card,
+.retriever-container .dashboard-header,
+.retriever-container > .card {
+    /* cap the visual width, center inside .main-content and add a modest bottom gap */
+    max-width: 1500px;         /* reduced from 980px */
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 14px;
+    box-sizing: border-box;
+    padding: 12px;            /* modestly reduced inner padding */
+}
+ 
+/* Slightly reduce the welcome title and retriever card header for better balance */
+.retriever-container .welcome-content h1 { font-size: 1.15rem; line-height: 1.2; }
+.retriever-container .retriever-card .card-header .card-title,
+.retriever-container .retriever-card .card-header { font-size: 0.98rem; }
+ 
+/* Slightly tighten retriever card padding */
+.retriever-container .retriever-card { padding: 12px; }
+ 
+/* compact the table font slightly inside retriever card */
+.retriever-container .retriever-card .retriever-table,
+.retriever-container .retriever-card .retriever-table th,
+.retriever-container .retriever-card .retriever-table td {
+    font-size: 0.92rem;
+}
+ 
+/* adjust default initial tile size (used as minimum) */
+:root {
+    /* tuned initial size for better responsiveness */
+    --grid-card-size: 260px; /* was 330px / page-specific files may override */
+    /* space to keep between the sidebar and cards */
+    --sidebar-gap: 48px;
+    /* add small panel padding and card max width to control visual size */
+    --panel-padding-sm: 10px;
+    --card-max-width: 980px;
+}
+ 
+/* Force the grid to produce flexible columns and center them */
+.pending-grid:not(.list-view) {
+    /* allow columns to grow while keeping a sensible minimum */
+    grid-template-columns: repeat(auto-fit, minmax(var(--grid-card-size), 1fr));
+    justify-content: center;
+    justify-items: center;
+    gap: 20px;
+}
+ 
+/* Make each pending card flow naturally (no forced square) */
+.pending-grid:not(.list-view) .pending-card {
+    /* remove rigid width/height so height adapts to content */
+    min-width: var(--grid-card-size);   /* kept as minimum */
+    max-width: 420px;                   /* optional cap for wide screens */
+    padding: 14px;
+    box-sizing: border-box;
+    display: grid;
+    grid-template-rows: auto 1fr auto;  /* thumbnail / content / actions - heights adapt */
+    gap: 10px;
+    align-items: start;
+    overflow: visible;                  /* allow content to determine height */
+    border-radius: 12px;
+}
+ 
+/* Ensure thumbnail occupies the top row but can size naturally */
+.pending-grid:not(.list-view) .pending-thumb {
+    grid-row: 1 / 2;
+    width: 100%;
+    /* remove fixed height behavior so thumbnail sizes with content */
+    height: auto;
+    border-radius: 10px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}

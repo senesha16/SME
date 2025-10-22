@@ -1,0 +1,171 @@
+/* Scoped full-bleed overrides for Pending Approvals page only.
+   - Requires document.documentElement.classList.add('pending-approvals') (added in PendingApprovals.php).
+   - Extends welcome-card, dashboard-header and main .card elements fully up to the sidebar width.
+   - Also adjusts inner content spacing and card internals so content reads well when extended.
+*/
+@media (min-width: 981px) {
+	.pending-approvals .pending-container .welcome-card,
+	.pending-approvals .pending-container .dashboard-header,
+	.pending-approvals .pending-container > .card,
+	.pending-approvals .main-content .welcome-card,
+	.pending-approvals .main-content .dashboard-header,
+	.pending-approvals .main-content > .card {
+		/* extend elements exactly to the sidebar edge (no extra offset) */
+		margin-left: calc(-1 * var(--sidebar-width));
+		width: calc(100% + var(--sidebar-width));
+		box-sizing: border-box;
+		/* reduced inset so cards sit closer to the sidebar */
+		padding-left: calc(var(--sidebar-width) + 8px); /* smaller inner offset */
+		padding-right: 32px;
+	}
+}
+
+/* When full-bleed applies, refine welcome-card internals so stats remain aligned */
+.pending-approvals .welcome-card .welcome-content {
+	max-width: calc(100% - var(--sidebar-width) - 48px);
+}
+
+/* Ensure welcome-stats keeps its row and spacing inside the extended area */
+.pending-approvals .welcome-stats {
+	padding-left: 8px; /* keep small visual offset from left edge in the card */
+}
+
+/* Card internals: increase padding and breathing room for card content */
+.pending-approvals .pending-container > .card,
+.pending-approvals .pending-container .pending-card {
+	/* a bit more padding so content doesn't touch the expanded edges */
+	padding: 20px;
+	box-shadow: 0 18px 40px rgba(12,18,22,0.08);
+	border-radius: 14px;
+}
+
+/* Enlarge thumbnail inside grid/list cards for better visual weight */
+.pending-approvals .pending-card .pending-thumb {
+	border-radius: 12px;
+	/* prefer a taller thumbnail when space allows */
+	min-height: 120px;
+	max-height: 44%;
+	background: #fbfdff;
+	border: 1px solid rgba(15,23,42,0.04);
+	box-shadow: inset 0 1px 0 rgba(255,255,255,0.6);
+}
+
+/* layout for two-file preview inside the card thumbnail */
+.pending-approvals .pending-thumb {
+	display: flex;
+	gap: 10px;
+	align-items: stretch;
+	justify-content: flex-start;
+	padding: 6px;
+	background: #fff;
+}
+
+/* each preview column */
+.pending-approvals .pending-thumb .file-preview-thumb {
+	flex: 1 1 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 92px;
+	border-radius: 10px;
+	overflow: hidden;
+	background: #f7fbff;
+	border: 1px solid rgba(15,23,42,0.04);
+}
+
+/* when underlying file is image, make it cover the box */
+.pending-approvals .pending-thumb .file-preview-thumb img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	display: block;
+}
+
+/* fallback file-icon inside preview (for non-image files) */
+.pending-approvals .pending-thumb .file-preview-thumb .file-icon {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	padding: 6px;
+	color: #2c3e50;
+}
+.pending-approvals .pending-thumb .file-preview-thumb .file-icon i {
+	font-size: 28px;
+	color: var(--accent);
+}
+
+/* smaller caption text hidden in grid-mode (keeps compact) */
+.pending-approvals .pending-thumb .file-preview-thumb .file-icon span {
+	font-size: 0.85rem;
+}
+
+/* ensure entity-icon / overlay icon still center correctly if no files */
+.pending-approvals .pending-thumb .entity-icon,
+.pending-approvals .pending-thumb .thumb-img-link {
+	width: 100%;
+	height: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+/* Accessibility: ensure focus outline is visible when cards are full-bleed */
+.pending-approvals .pending-card:focus-within {
+	outline: 3px solid rgba(230,39,39,0.08);
+	box-shadow: 0 18px 40px rgba(12,18,22,0.10);
+}
+
+/* nudge the overall pending container content closer to the sidebar too */
+.pending-approvals .pending-container {
+	/* reduces the gap between the sidebar and the card block */
+	padding-left: calc(var(--sidebar-width) + 8px) !important;
+}
+
+/* Force pending card height on Pending Approvals page */
+.pending-approvals .pending-card {
+	/* fixed visual height for Pending Approvals only */
+	height: 400px !important;
+	min-height: 400px !important;
+	overflow: visible;
+}
+
+/* In grid-mode ensure tiles also respect the requested height (Pending Approvals only) */
+.pending-approvals .pending-grid:not(.list-view) .pending-card {
+	height: 400px !important;
+	min-height: 400px !important;
+	overflow: visible;
+}
+
+/* Slightly adjust thumbnail proportion inside the 400px card to keep body visible */
+.pending-approvals .pending-card .pending-thumb {
+	max-height: 240px;  /* tuned for 400px card */
+	height: 46%;
+	margin-bottom: 0;
+}
+
+/* Remove body max-height/scroll and reduce top padding/gap */
+.pending-approvals .pending-card .pending-body {
+	/* allow body to size naturally within the card (no internal scroll) */
+	max-height: none;
+	overflow: visible;
+	/* tighten spacing between thumb and body */
+	padding-top: 4px; /* reduced */
+	gap: 6px;         /* keep compact vertical spacing inside body */
+}
+
+/* also ensure file-preview thumbs stay visually aligned when thumb height reduced */
+.pending-approvals .pending-thumb .file-preview-thumb {
+	min-height: 72px; /* reduced to match smaller thumb */
+}
+
+/* Mobile fallback: keep cards auto height on small screens (unchanged) */
+@media (max-width: 820px) {
+	.pending-approvals .pending-card,
+	.pending-approvals .pending-grid:not(.list-view) .pending-card {
+		height: auto !important;
+		min-height: 0 !important;
+	}
+	.pending-approvals .pending-card .pending-body { max-height: none; overflow: visible; padding-top:8px; }
+}

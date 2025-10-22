@@ -1,0 +1,214 @@
+/* SME User Items Styles */
+/* Color Palette: #E62727 (Primary Red), #7f8c8d (Secondary Gray), #FFFFFF (White) */
+
+/* Additional styles for Add Item form */
+.form-container {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.page-header {
+    background: linear-gradient(135deg, #E62727 0%, #c41e3a 100%);
+    color: #FFFFFF;
+    padding: 40px;
+    border-radius: 20px;
+    margin-bottom: 30px;
+    box-shadow: 0 10px 30px rgba(230, 39, 39, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.page-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+    pointer-events: none;
+}
+
+.page-header h2 {
+    font-size: 2rem;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.page-header p {
+    opacity: 0.9;
+    font-size: 1.1rem;
+}
+
+.section {
+    margin-bottom: 30px;
+    padding: 25px;
+    border: 2px solid #ecf0f1;
+    border-radius: 15px;
+    background: #ffffff;
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+}
+
+
+
+.section-title {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+    color: #2c3e50;
+    font-size: 1.3rem;
+    font-weight: 600;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #ecf0f1;
+}
+
+.section-title i {
+    margin-right: 12px;
+    color: #E62727;
+    font-size: 1.4rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 25px;
+    margin-bottom: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-label {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    color: #34495e;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.form-label i {
+    margin-right: 10px;
+    color: #7f8c8d;
+    width: 18px;
+}
+
+.form-input, .form-select {
+    padding: 15px 18px;
+    border: 2px solid #ecf0f1;
+    border-radius: 10px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: white;
+    font-family: inherit;
+}
+
+.form-input:focus, .form-select:focus {
+    outline: none;
+    border-color: #E62727;
+    box-shadow: 0 0 0 4px rgba(230, 39, 39, 0.1);
+    background: #fafbfc;
+}
+
+.form-input::placeholder {
+    color: #bdc3c7;
+}
+
+.error-message {
+    color: #E62727;
+    font-size: 0.85rem;
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    font-weight: 500;
+}
+
+.error-message i {
+    margin-right: 6px;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.submit-section {
+    text-align: center;
+    padding: 30px;
+    background: #f8f9fa;
+    border-radius: 15px;
+    margin-top: 30px;
+}
+
+.btn-submit {
+    background: linear-gradient(135deg, #E62727 0%, #c41e3a 100%);
+    color: white;
+    padding: 18px 45px;
+    border: none;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 5px 15px rgba(230, 39, 39, 0.2);
+}
+
+.btn-submit:hover {
+    background: linear-gradient(135deg, #c41e3a 0%, #a01818 100%);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(230, 39, 39, 0.3);
+}
+
+.notification {
+    background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+    color: white;
+    padding: 20px 30px;
+    border-radius: 12px;
+    margin-bottom: 25px;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 5px 15px rgba(46, 204, 113, 0.3);
+}
+
+.notification i {
+    margin-right: 12px;
+    font-size: 1.3rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .main-content {
+        margin-left: 0;
+        width: 100%;
+        padding: 20px;
+    }
+
+    .sidebar {
+        display: none;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .page-header {
+        padding: 25px;
+    }
+
+    .page-header h2 {
+        font-size: 1.6rem;
+    }
+
+    .section {
+        padding: 20px;
+    }
+}

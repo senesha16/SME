@@ -1,0 +1,582 @@
+/* Admin Analytics — polished dashboard styles */
+ 
+/* Theme variables to align analytics with index */
+:root {
+    --bg: #f4f6f8;
+    --surface: #ffffff;
+    --muted: #7f8c8d;
+    --subtle-muted: #8a99a6;
+    --text: #2c3e50;
+    --primary: #E62727;
+    --accent-gradient: linear-gradient(135deg,#E62727,#c41e3a);
+    --card-radius: 14px;
+    --card-shadow: 0 10px 30px rgba(0,0,0,0.04);
+    --card-elevated-shadow: 0 20px 50px rgba(0,0,0,0.08);
+    --glass-border: rgba(0,0,0,0.04);
+    --table-head-bg: #fbfcfe;
+    --max-width: 1200px;
+    --sidebar-width: 240px; /* default/fallback width for sidebar */
+    --sidebar-gap: 48px; /* space between sidebar and content */
+    --panel-padding: 12px;
+    --table-border: rgba(44,62,80,0.06);
+    --muted-2: #6f808b;
+}
+ 
+/* Base */
+* { box-sizing: border-box; }
+body {
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    color: var(--text);
+    background: var(--bg);
+}
+ 
+/* Ensure main-content has breathing room when used with the shared nav/sidebar */
+.main-content {
+    /* moved slightly farther from sidebar for better breathing room */
+    max-width: var(--max-width);
+    margin: 32px auto;
+    padding: 24px;
+    /* increase gap from sidebar so cards sit further right */
+    margin-left: calc(var(--sidebar-width) + var(--sidebar-gap));
+    transition: margin-left 180ms ease;
+}
+ 
+/* On small screens treat content as full-width (sidebar typically collapses) */
+@media (max-width: 980px) {
+    .main-content { margin-left: 0; padding: 18px; }
+}
+ 
+/* Page header */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 18px;
+    /* NEW: brand background + subtle gradient */
+    background: linear-gradient(90deg, #E62727 0%, #c41e3a 100%);
+    padding: 16px;
+    border-radius: 12px;
+    color: #ffffff;
+    box-shadow: 0 8px 30px rgba(230,39,39,0.08);
+}
+.page-title h1 {
+    font-size: 1.75rem;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #ffffff;
+}
+.page-title .small { margin: 0; color: rgba(255,255,255,0.9); }
+ 
+/* Header stats (right side) */
+.header-stats {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    /* Keep header stat cards on one row and enable horizontal scrolling on small screens */
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+.stat-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255,255,255,0.95);
+    color: var(--text);
+    padding: 10px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(0,0,0,0.04);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+    min-width: 140px;
+    flex: 0 0 auto;
+    max-width: 320px;
+}
+.stat-card .stat-icon {
+    width:44px;
+    height:44px;
+    border-radius:10px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    color:#E62727;            /* brand red icon */
+    font-size:18px;
+    background: #ffffff;      /* white pill behind icon */
+    border: 1px solid rgba(15,23,42,0.04);
+    box-shadow: 0 6px 14px rgba(15,23,42,0.04);
+}
+ 
+/* Ensure stat cards use solid white background for clear contrast */
+.stat-card {
+    background: #ffffff !important;
+    color: var(--text) !important;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.06) !important;
+    border: 1px solid rgba(15,23,42,0.04) !important;
+}
+ 
+/* Pendings-like adjustments: compact paddings, stronger table borders, badges & actions */
+:root {
+    --panel-padding: 12px;
+    --table-border: rgba(44,62,80,0.06);
+    --muted-2: #6f808b;
+}
+ 
+/* Slightly more compact card spacing to match pendings page */
+.card, .chart-card, .welcome-card, .stat-card {
+    padding: var(--panel-padding);
+    border-radius: 12px; /* match pendings radius */
+}
+ 
+/* Stat modifiers to match admin-pendings accents */
+.stat--red .stat-icon { background: linear-gradient(135deg,#E94B4B,#D22A2A); box-shadow: 0 8px 20px rgba(210,42,42,0.09); }
+.stat--blue .stat-icon { background: linear-gradient(135deg,#4B9AE9,#2A7CD2); box-shadow: 0 8px 20px rgba(42,124,210,0.07); }
+.stat--yellow .stat-icon { background: linear-gradient(135deg,#F6C85F,#E8A93F); box-shadow: 0 8px 20px rgba(232,169,63,0.07); }
+ 
+/* Table: mimic pendings visual (clear borders, compact rows, subtle header background) */
+.stock-table {
+    font-size: 0.92rem;
+    border: 1px solid var(--table-border);
+    border-radius: 8px;
+    overflow: hidden;
+}
+.stock-table thead th {
+    background: #E62727;     /* brand header color */
+    color: #ffffff;          /* ensure readable contrast */
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.08); /* subtle separator */
+    /* center header content */
+    text-align: center;
+    vertical-align: middle;
+}
+.stock-table tbody td {
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(0,0,0,0.04);
+    /* center cell content */
+    text-align: center;
+    vertical-align: middle;
+}
+ 
+/* make location cell (first column) bold for clarity */
+.stock-table tbody td:first-child {
+    font-weight: 700;
+}
+ 
+.stock-table tbody tr:hover { background: #f3f8ff; }
+ 
+/* Badges and small status styles used on pendings page */
+.badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight:700;
+    vertical-align: middle;
+}
+.badge-pending { background: #FFF7E6; color: #D08E00; border: 1px solid rgba(208,142,0,0.08); }
+.badge-approved { background: #E9FFF2; color: #007A3D; border: 1px solid rgba(0,122,61,0.06); }
+ 
+/* Action buttons consistent with pendings page */
+.btn-action {
+    display:inline-flex; align-items:center; gap:8px;
+    padding:8px 10px; border-radius:8px; font-weight:700; font-size:0.9rem;
+    text-decoration:none; cursor:pointer; border:1px solid transparent;
+}
+.btn-action--primary { background: linear-gradient(135deg,#2A7CD2,#1F5FB0); color:#fff; box-shadow: 0 8px 20px rgba(42,124,210,0.08); }
+.btn-action--danger { background: linear-gradient(135deg,#E94B4B,#D22A2A); color:#fff; box-shadow: 0 8px 20px rgba(210,42,42,0.08); }
+ 
+/* NEW: Delete button styles */
+.btn-delete {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    padding: 6px;
+    border-radius: 10px;           /* rounded corners */
+    background: transparent;
+    color: #E62727;               /* brand red */
+    border: 1px solid rgba(230,39,39,0.12);
+    text-decoration: none;
+    cursor: pointer;
+    transition: background .12s ease, transform .12s ease, box-shadow .12s ease;
+}
+ 
+.btn-delete:hover {
+    background: rgba(230,39,39,0.06);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(230,39,39,0.06);
+}
+ 
+.btn-delete i {
+    pointer-events: none;
+    font-size: 14px;
+}
+ 
+/* Ensure main-content spacing matches pendings layout when the theme class is present */
+.admin-pendings-theme .main-content {
+    max-width: var(--max-width);
+    padding: 20px;
+    margin-top: 24px;
+}
+ 
+/* Keep responsive behavior from existing file but prefer compact paddings on smaller screens */
+@media (max-width: 720px) {
+    .card, .stat-card { padding: 10px; }
+    .stock-table thead th, .stock-table tbody td { padding: 8px; }
+    .page-header { padding: 12px; }
+    .header-stats .stat-card { min-width: 120px; padding: 8px 10px; }
+    .welcome-stats .stat-card,
+    .header-stats .stat-card { min-width: 110px; }
+}
+ 
+/* Accessibility: ensure canvas container has role */
+.chart-card { position: relative; }
+ 
+/* Chart fixes: ensure pie/donut canvases have an explicit height and responsive behavior */
+.chart-card {
+    /* container for charts (keeps layout consistent with cards) */
+    position: relative;
+    padding: var(--panel-padding);
+}
+ 
+/* Chart.js canvas: ensure it does not get stretched by CSS */
+.chart-card canvas {
+    /* Prevent forced stretching — allow the canvas to size naturally while respecting container */
+    display: block;
+    margin: 0 auto;
+    /* allow canvas to scale but keep a square (pie) aspect */
+    max-width: 100%;
+    width: auto !important;
+    height: auto !important;
+    aspect-ratio: 1 / 1;       /* keep square shape for pies */
+    max-height: 420px;         /* optional cap for very large containers */
+}
+ 
+/* Optional centered label for donut charts (place a .chart-center element inside .chart-card) */
+.chart-card .chart-center {
+    position: absolute;
+    inset: auto;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    pointer-events: none;
+    color: var(--text);
+    font-weight: 700;
+    font-size: 1.05rem;
+}
+ 
+/* Simple, flexible legend for pie charts */
+.pie-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+.pie-legend .legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    background: #fff;
+    box-shadow: 0 6px 16px rgba(10,10,30,0.04);
+    font-size: 0.9rem;
+}
+.pie-legend .legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    flex: 0 0 12px;
+}
+ 
+/* Smaller canvas height on narrow screens */
+@media (max-width: 720px) {
+    .chart-card canvas { height: 220px !important; }
+    .chart-card .chart-center { font-size: 0.95rem; }
+}
+ 
+/* Small pie/donut variant: use .pie-small on the chart container to render a compact pie */
+.chart-card.pie-small {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    max-width: 260px; /* overall card width for small pie */
+    margin: 0 auto;
+    padding: 8px; /* slightly tighter padding */
+}
+ 
+/* canvas sizing for the small pie */
+.chart-card.pie-small canvas {
+    width: 220px !important;   /* fixed visual width */
+    height: 220px !important;  /* square so pie appears balanced */
+    max-height: none;
+    max-width: none;
+    display: block;
+    margin: 0 auto;
+}
+ 
+/* center label scale down */
+.chart-card.pie-small .chart-center {
+    font-size: 0.96rem;
+}
+ 
+/* compact legend below a small pie */
+.chart-card.pie-small + .pie-legend,
+.chart-card.pie-small .pie-legend {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 10px;
+}
+ 
+/* mobile: reduce further on very small screens */
+@media (max-width: 520px) {
+    .chart-card.pie-small { max-width: 180px; }
+    .chart-card.pie-small canvas { width: 140px !important; height: 140px !important; }
+    .chart-card.pie-small .chart-center { font-size: 0.9rem; }
+}
+ 
+/* Ensure specific charts use a fixed 360px height
+   - Use both canvas#id selectors and optional wrapper classes so it works whether the canvas has an id or the container is marked.
+   - IDs used: #overallEstablishmentTypes, #establishmentsByLocation
+   - Optional wrapper classes: .chart-card.overall-establishment, .chart-card.establishments-by-location
+*/
+.chart-card.overall-establishment canvas,
+.chart-card.establishments-by-location canvas,
+canvas#overallEstablishmentTypes,
+canvas#establishmentsByLocation {
+    display: block;
+    margin: 0 auto;
+    width: auto !important;
+    /* set the requested height */
+    height: 360px !important;
+    /* keep pie aspect from being forced square if chart type is non-square */
+    aspect-ratio: auto;
+    max-height: none;
+}
+ 
+/* Mobile fallback: reduce height so it fits smaller screens */
+@media (max-width: 720px) {
+    .chart-card.overall-establishment canvas,
+    .chart-card.establishments-by-location canvas,
+    canvas#overallEstablishmentTypes,
+    canvas#establishmentsByLocation {
+        height: 260px !important;
+    }
+}
+ 
+/* Ensure total pie and location bar use the same visual height */
+canvas#totalPieChart,
+canvas#locationBarChart {
+    display: block;
+    margin: 0 auto;
+    width: auto !important;
+    height: 360px !important;  /* match requested size */
+    max-height: none;
+    /* keep pie square while using the fixed height */
+    aspect-ratio: 1 / 1;
+}
+ 
+/* For the bar chart allow it to expand horizontally but keep the same height */
+canvas#locationBarChart {
+    aspect-ratio: auto; /* bar chart can be non-square */
+    width: 100% !important;
+}
+ 
+/* Mobile fallback */
+@media (max-width: 720px) {
+    canvas#totalPieChart,
+    canvas#locationBarChart {
+        height: 260px !important;
+    }
+}
+ 
+/* Section titles centered */
+.section-title {
+    font-size: 19px;
+    text-align: center;
+    font-weight: 700;    /* make title bold */
+    margin-bottom: 18px; /* add space below the section title */
+    /* ...existing properties... */
+}
+ 
+/* layout for the two chart cards (left = pie, right = full bar) */
+.stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    align-items: start;
+}
+ 
+/* Make chart-card and chart-card.chart-full share the same fixed visual height */
+.chart-card,
+.chart-card.chart-full {
+    /* fixed visual height so both cards match exactly */
+    height: 360px !important;
+    min-height: 360px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+ 
+/* Ensure canvases fill their parent card height */
+.chart-card canvas,
+.chart-card.chart-full canvas,
+canvas#totalPieChart,
+canvas#locationBarChart {
+    width: 100% !important;
+    height: 100% !important;
+    max-height: none;
+    display: block;
+    margin: 0;
+    object-fit: contain;
+}
+ 
+/* Keep the pie square inside the fixed-height card */
+canvas#totalPieChart {
+    aspect-ratio: 1 / 1;
+    width: auto !important; /* center the square canvas horizontally if needed */
+    margin-left: auto;
+    margin-right: auto;
+}
+ 
+/* Allow bar chart to expand full width while matching height */
+canvas#locationBarChart {
+    aspect-ratio: auto;
+    width: 100% !important;
+}
+ 
+/* Mobile fallback: smaller fixed height for small screens */
+@media (max-width: 720px) {
+    .chart-card,
+    .chart-card.chart-full {
+        height: 260px !important;
+        min-height: 260px;
+    }
+    .chart-card canvas,
+    .chart-card.chart-full canvas {
+        height: 100% !important;
+    }
+    canvas#totalPieChart { aspect-ratio: 1 / 1; width: auto !important; }
+}
+ 
+/* Chart card titles: center and match requested size */
+.chart-card .card-title,
+.chart-card.chart-full .card-title {
+    font-size: 19px;
+    font-weight: 700;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px; /* spacing between icon and text */
+    /* added: give breathing room from the top and separate from the canvas below */
+    padding-top: 12px;
+    padding-bottom: 10px;
+    margin: 0;
+}
+ 
+.chart-card .card-title {
+    padding-top: 50px;
+}
+ 
+/* slightly adjust the title icon size for balance */
+.chart-card .card-title i {
+    font-size: 18px;
+}
+ 
+/* Navbar & Sidebar icons: neutral color by default, brand red on active/hover */
+.sidebar-nav .nav-item i,
+.navbar .nav-item i,
+.nav .nav-item i,
+.sidebar .nav-item i,
+.dashboard-header .dashboard-title h2 i {
+    color: var(--muted); /* neutral when not in use */
+}
+ 
+/* active/hover remains brand red */
+.sidebar-nav .nav-item.active i,
+.sidebar-nav .nav-item:hover i,
+.navbar .nav-item.active i,
+.navbar .nav-item:hover i {
+    color: #E62727;
+}
+ 
+/* Ensure stat icons use white background with red icon (override gradients) */
+.stat-card .stat-icon,
+.welcome-stats .stat-card .stat-icon,
+.stat--red .stat-icon,
+.stat--blue .stat-icon,
+.stat--yellow .stat-icon {
+    background: #ffffff !important;
+    color: #E62727 !important;
+    border: 1px solid rgba(15,23,42,0.04) !important;
+    box-shadow: 0 6px 14px rgba(15,23,42,0.04) !important;
+}
+ 
+/* Ensure stat-card heading and paragraph text are black */
+.stat-card .stat-content h3,
+.stat-card .stat-content p {
+    color: #000 !important;
+}
+ 
+/* Filter select pill styling for consistency */
+.filter-select,
+.dashboard-header .controls .filter-select {
+    border-radius: 10px;
+    padding: 8px 12px;
+    border: 1px solid rgba(15,23,42,0.06);
+    background: #fff;
+}
+ 
+/* Focus state */
+.filter-select:focus,
+.filter-select:active,
+.filter-select:focus-visible,
+.dashboard-header .controls .filter-select:focus,
+.dashboard-header .controls .filter-select:active {
+    outline: none;
+    border-color: #E62727;
+    box-shadow: 0 4px 18px rgba(230,39,39,0.08);
+    border-radius: 10px;
+}
+ 
+/* Add spacing below welcome card and retriever card */
+.welcome-card {
+    /* ensure a clear gap below the hero */
+    margin-bottom: 24px !important;
+}
+ 
+.retriever-card {
+    max-width: 600px;      /* reduced width for a smaller visual card */
+    width: 100%;
+    padding: 8px 10px;     /* tighter padding */
+    margin-left: 40px;     /* nudge slightly to the right */
+    margin-right: auto;
+    margin-bottom: 14px !important; /* consistent bottom gap */
+    box-sizing: border-box;
+}
+
+/* Optional even-smaller variant you can add to markup: <div class="retriever-card small"> */
+.retriever-card.small {
+    max-width: 480px;
+    padding: 6px 8px;
+}
+
+/* Tighter responsive fallback */
+@media (max-width: 980px) {
+    .retriever-card {
+        max-width: 95%;
+        margin-left: auto; /* reset to centered on narrow viewports */
+    }
+    .retriever-card.small {
+        max-width: 90%;
+    }
+}
+
+/* End admin-report.css */
