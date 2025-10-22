@@ -31,7 +31,6 @@
                 <div class="hero-buttons">
                     <a href="register.php" class="btn btn-primary">Get Started</a>
                     <a href="login.php" class="btn btn-secondary">Sign In</a>
-                    <a href="logout.php" class="btn btn-secondary">Sign Out</a>
                 </div>
             </div>
         </div>
