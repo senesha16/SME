@@ -27,11 +27,11 @@ document.addEventListener("DOMContentLoaded", function(){
             <i class="fas fa-table"></i>
             <span>View Records</span>
         </a>
-        <a href="pendingapprovals.php" class="nav-item">
+        <a href="PendingApprovals.php" class="nav-item">
             <i class="fas fa-briefcase"></i>
             <span>Pending Business</span>
         </a>
-        <a href="pendingsubscriptions.php" class="nav-item">
+        <a href="PendingSubscriptions.php" class="nav-item">
             <i class="fas fa-file-invoice-dollar"></i>
             <span>Pending Subscription</span>
         </a>
