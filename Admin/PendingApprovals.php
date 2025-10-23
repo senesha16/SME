@@ -88,6 +88,11 @@ require '../PHPMailer/src/Exception.php';
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
+// compute project root and base URL dynamically so the code works on Hostinger or local
+$PROJECT_ROOT = realpath(__DIR__ . '/../'); // points to .../SME
+$SITE_ROOT_PATH = rtrim(str_replace('\\', '/', dirname(dirname($_SERVER['SCRIPT_NAME']))), '/') . '/'; // e.g. /SME/
+$SITE_BASE_URL = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . $SITE_ROOT_PATH;
+
 $email = $_SESSION["email"];
 $query_account_type = mysqli_query($connections, "SELECT account_type FROM tbl_user WHERE email='$email'");
 $user_row = mysqli_fetch_assoc($query_account_type);
@@ -125,13 +130,13 @@ if (isset($_GET['approve']) && isset($_GET['id_pending'])) {
 
         // Move DTI file
         $DTI = '';
-        $dti_full_path = $_SERVER['DOCUMENT_ROOT'] . '/SME/' . $temp_DTI;
+	$dti_full_path = $PROJECT_ROOT . '/' . ltrim(str_replace('\\','/',$temp_DTI), '/');
         if (!empty($temp_DTI) && file_exists($dti_full_path)) {
             $DTI_target_file = "dti/" . basename($temp_DTI);
-            if (!is_dir($_SERVER['DOCUMENT_ROOT'] . '/SME/dti/')) {
-                mkdir($_SERVER['DOCUMENT_ROOT'] . '/SME/dti/', 0755, true);
-            }
-            $dti_target_full_path = $_SERVER['DOCUMENT_ROOT'] . '/SME/' . $DTI_target_file;
+			if (!is_dir($PROJECT_ROOT . '/dti/')) {
+				mkdir($PROJECT_ROOT . '/dti/', 0755, true);
+			}
+			$dti_target_full_path = $PROJECT_ROOT . '/' . $DTI_target_file;
             if (file_exists($dti_target_full_path)) {
                 $DTI_target_file = "dti/" . rand(1000,9999) . "_" . basename($temp_DTI);
                 $dti_target_full_path = $_SERVER['DOCUMENT_ROOT'] . '/SME/' . $DTI_target_file;
@@ -143,13 +148,13 @@ if (isset($_GET['approve']) && isset($_GET['id_pending'])) {
 
         // Move business permit file
         $business_permit = '';
-        $permit_full_path = $_SERVER['DOCUMENT_ROOT'] . '/SME/' . $temp_business_permit;
+	$permit_full_path = $PROJECT_ROOT . '/' . ltrim(str_replace('\\','/',$temp_business_permit), '/');
         if (!empty($temp_business_permit) && file_exists($permit_full_path)) {
             $business_permit_target_file = "business_permit/" . basename($temp_business_permit);
-            if (!is_dir($_SERVER['DOCUMENT_ROOT'] . '/SME/business_permit/')) {
-                mkdir($_SERVER['DOCUMENT_ROOT'] . '/SME/business_permit/', 0755, true);
-            }
-            $permit_target_full_path = $_SERVER['DOCUMENT_ROOT'] . '/SME/' . $business_permit_target_file;
+			if (!is_dir($PROJECT_ROOT . '/business_permit/')) {
+				mkdir($PROJECT_ROOT . '/business_permit/', 0755, true);
+			}
+			$permit_target_full_path = $PROJECT_ROOT . '/' . $business_permit_target_file;
             if (file_exists($permit_target_full_path)) {
                 $business_permit_target_file = "business_permit/" . rand(1000,9999) . "_" . basename($temp_business_permit);
                 $permit_target_full_path = $_SERVER['DOCUMENT_ROOT'] . '/SME/' . $business_permit_target_file;
@@ -160,16 +165,23 @@ if (isset($_GET['approve']) && isset($_GET['id_pending'])) {
         }
 
         // Insert into tbl_user only if DTI and business permit are valid
-        if (!empty($DTI) && !empty($business_permit)) {
+		if (!empty($DTI) && !empty($business_permit)) {
             $user_query = "INSERT INTO tbl_user (first_name, middle_name, last_name, birthday, birth_place, city, barangay, lot_street, prefix, seven_digit, email, password, attempt, log_time, account_type, img, trial_start_date)
                            VALUES ('$first_name', '$middle_name', '$last_name', '$birthday', '$birth_place', '$city', '$barangay', '$lot_street', '$prefix', '$seven_digit', '$email', '$password', '', '', '2', '$img', NULL)";
             if (mysqli_query($connections, $user_query)) {
                 $new_user_id = mysqli_insert_id($connections);
 
                 // Insert into tbl_business
-                $business_query = "INSERT INTO tbl_business (id_user, establishment_name, capital, date_of_establishment, business_type, nature_of_business, sabang_location, lot_street_business, DTI, business_permit, enterprise_type)
-                                  VALUES ('$new_user_id', '$establishment_name', '$capital', '$date_of_establishment', '$business_type', '$nature_of_business', '$sabang_location', '$lot_street_business', '$DTI', '$business_permit', '$enterprise_type')";
-                mysqli_query($connections, $business_query);
+				$business_query = "INSERT INTO tbl_business (id_user, establishment_name, capital, date_of_establishment, business_type, nature_of_business, sabang_location, lot_street_business, DTI, business_permit, enterprise_type)
+								  VALUES ('$new_user_id', '$establishment_name', '$capital', '$date_of_establishment', '$business_type', '$nature_of_business', '$sabang_location', '$lot_street_business', '$DTI', '$business_permit', '$enterprise_type')";
+				$business_res = mysqli_query($connections, $business_query);
+				if (!$business_res) {
+					// rollback user insert to avoid orphaned user
+					$dbErr = mysqli_error($connections);
+					mysqli_query($connections, "DELETE FROM tbl_user WHERE id_user='$new_user_id'");
+					echo "<script>window.location.href='PendingApprovals.php?notify=User%20approval%20failed:%20Business%20insert%20error';</script>";
+					exit;
+				}
 
                 // Send approval email
                 $mail = new PHPMailer(true);
@@ -185,15 +197,35 @@ if (isset($_GET['approve']) && isset($_GET['id_pending'])) {
                     $mail->addAddress($email);
                     $mail->isHTML(true);
                     $mail->Subject = 'Registration Approval';
-                    $mail->Body = "Dear $first_name $last_name,<br><br>Your registration has been approved. Your account password is: <font color='red'><b>$password</b></font><br><br>Please use this password to log in to your account at <a href='http://localhost/SME/'>SME System</a>.<br><br>Best regards,<br>SME System Team";
-                    $mail->send();
-                    mysqli_query($connections, "DELETE FROM tbl_pending_users WHERE id_pending='$id_pending'");
-                    echo "<script>window.location.href='PendingApprovals.php?notify=User%20approved%20successfully%20and%20email%20sent';</script>";
-                } catch (Exception $e) {
-                    echo "<script>window.location.href='PendingApprovals.php?notify=User%20approved%20but%20email%20failed:%20" . urlencode($mail->ErrorInfo) . "';</script>";
-                }
+					// use the detected base URL so the link is not localhost
+					$mail->Body = "Dear $first_name $last_name,<br><br>Your registration has been approved. Your account password is: <font color='red'><b>$password</b></font><br><br>Please use this password to log in to your account at <a href='{$SITE_BASE_URL}'>SME System</a>.<br><br>Best regards,<br>SME System Team";
+					$emailSent = false;
+					$mailError = '';
+					try {
+						$emailSent = $mail->send();
+					} catch (Exception $e) {
+						$mailError = $mail->ErrorInfo ?: $e->getMessage();
+						$emailSent = false;
+					}
+					// remove pending record regardless of email success so approval completes
+					mysqli_query($connections, "DELETE FROM tbl_pending_users WHERE id_pending='$id_pending'");
+					if ($emailSent) {
+						echo "<script>window.location.href='PendingApprovals.php?notify=User%20approved%20successfully%20and%20email%20sent';</script>";
+					} else {
+						$encoded = urlencode('User approved but email failed: ' . $mailError);
+						echo "<script>window.location.href='PendingApprovals.php?notify={$encoded}';</script>";
+					}
+				} catch (Exception $e) {
+					// catch from PHPMailer setup (shouldn't normally reach here because we handle send above)
+					$mailError = $mail->ErrorInfo ?: $e->getMessage();
+					mysqli_query($connections, "DELETE FROM tbl_pending_users WHERE id_pending='$id_pending'");
+					$encoded = urlencode('User approved but email error: ' . $mailError);
+					echo "<script>window.location.href='PendingApprovals.php?notify={$encoded}';</script>";
+				}
             } else {
-                echo "<script>window.location.href='PendingApprovals.php?notify=User%20approval%20failed:%20Database%20error';</script>";
+				$dberr = mysqli_error($connections);
+				$enc = urlencode('User approval failed: Database error - ' . $dberr);
+				echo "<script>window.location.href='PendingApprovals.php?notify={$enc}';</script>";
             }
         } else {
             echo "<script>window.location.href='PendingApprovals.php?notify=User%20approval%20failed:%20Missing%20DTI%20or%20business%20permit';</script>";
