@@ -101,8 +101,8 @@ document.addEventListener("DOMContentLoaded", function(){
     if (!sidebar) return;
     sidebar.innerHTML = `
         <a href="index.php" class="nav-item"><i class="fas fa-table"></i><span>View Records</span></a>
-        <a href="pendingapprovals.php" class="nav-item"><i class="fas fa-briefcase"></i><span>Pending Business</span></a>
-        <a href="pendingsubscriptions.php" class="nav-item"><i class="fas fa-file-invoice-dollar"></i><span>Pending Subscription</span></a>
+        <a href="PendingApprovals.php" class="nav-item"><i class="fas fa-briefcase"></i><span>Pending Business</span></a>
+        <a href="PendingSubscriptions.php" class="nav-item"><i class="fas fa-file-invoice-dollar"></i><span>Pending Subscription</span></a>
         <a href="retriever.php" class="nav-item">
             <i class="fas fa-file-invoice-dollar"></i>
             <span>View Users</span>

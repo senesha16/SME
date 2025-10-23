@@ -238,18 +238,18 @@ if (isset($_GET['approve']) && isset($_GET['id_pending'])) {
 if (isset($_GET['reject']) && isset($_GET['id_pending'])) {
     $id_pending = mysqli_real_escape_string($connections, $_GET['id_pending']);
     $query = mysqli_query($connections, "SELECT DTI, business_permit, first_name, last_name, email FROM tbl_pending_users WHERE id_pending='$id_pending'");
-    if ($row = mysqli_fetch_assoc($query)) {
-        $first_name = $row['first_name'];
-        $last_name = $row['last_name'];
-        $email = $row['email'];
-        $dti_full_path = $_SERVER['DOCUMENT_ROOT'] . '/SME/' . str_replace("\\", "/", $row['DTI']);
-        $permit_full_path = $_SERVER['DOCUMENT_ROOT'] . '/SME/' . str_replace("\\", "/", $row['business_permit']);
-        if (!empty($row['DTI']) && file_exists($dti_full_path)) {
-            unlink($dti_full_path);
-        }
-        if (!empty($row['business_permit']) && file_exists($permit_full_path)) {
-            unlink($permit_full_path);
-        }
+	if ($row = mysqli_fetch_assoc($query)) {
+		$first_name = $row['first_name'];
+		$last_name = $row['last_name'];
+		$email = $row['email'];
+		$dti_full_path = $row['DTI'] ? $PROJECT_ROOT . '/' . ltrim(str_replace("\\", "/", $row['DTI']), '/') : '';
+		$permit_full_path = $row['business_permit'] ? $PROJECT_ROOT . '/' . ltrim(str_replace("\\", "/", $row['business_permit']), '/') : '';
+		if (!empty($row['DTI']) && file_exists($dti_full_path)) {
+			unlink($dti_full_path);
+		}
+		if (!empty($row['business_permit']) && file_exists($permit_full_path)) {
+			unlink($permit_full_path);
+		}
 
         // Send rejection email
         $mail = new PHPMailer(true);
@@ -377,17 +377,20 @@ function get_file_icon_class($path) {
 					$contact = htmlspecialchars(($row['prefix'] ?? '') . ($row['seven_digit'] ?? ''));
 
 					// image / document URLs
-					$img_path = $row['img'] ? str_replace("\\","/",$row['img']) : '';
-					$img_exists = $img_path && file_exists($_SERVER['DOCUMENT_ROOT'] . '/SME/' . $img_path);
-					$img_url = $img_exists ? '/SME/' . $img_path : '';
+					$img_path = $row['img'] ? str_replace('\\','/',$row['img']) : '';
+					$img_full = $img_path ? $PROJECT_ROOT . '/' . ltrim($img_path, '/') : '';
+					$img_exists = $img_full && file_exists($img_full);
+					$img_url = $img_exists ? $SITE_BASE_URL . ltrim($img_path, '/') : '';
 
-					$dti_path = $row['DTI'] ? str_replace("\\","/",$row['DTI']) : '';
-					$dti_exists = $dti_path && file_exists($_SERVER['DOCUMENT_ROOT'] . '/SME/' . $dti_path);
-					$dti_url = $dti_exists ? '/SME/' . $dti_path : '';
+					$dti_path = $row['DTI'] ? str_replace('\\','/',$row['DTI']) : '';
+					$dti_full = $dti_path ? $PROJECT_ROOT . '/' . ltrim($dti_path, '/') : '';
+					$dti_exists = $dti_full && file_exists($dti_full);
+					$dti_url = $dti_exists ? $SITE_BASE_URL . ltrim($dti_path, '/') : '';
 
-					$permit_path = $row['business_permit'] ? str_replace("\\","/",$row['business_permit']) : '';
-					$permit_exists = $permit_path && file_exists($_SERVER['DOCUMENT_ROOT'] . '/SME/' . $permit_path);
-					$permit_url = $permit_exists ? '/SME/' . $permit_path : '';
+					$permit_path = $row['business_permit'] ? str_replace('\\','/',$row['business_permit']) : '';
+					$permit_full = $permit_path ? $PROJECT_ROOT . '/' . ltrim($permit_path, '/') : '';
+					$permit_exists = $permit_full && file_exists($permit_full);
+					$permit_url = $permit_exists ? $SITE_BASE_URL . ltrim($permit_path, '/') : '';
 
 					$approve_url = "PendingApprovals.php?id_pending={$id_pending}&approve=1";
 					$reject_url  = "PendingApprovals.php?id_pending={$id_pending}&reject=1";
@@ -405,7 +408,7 @@ function get_file_icon_class($path) {
 								<?php if ($dti_exists || $permit_exists): ?>
 									<div class="file-preview-thumb">
 										<?php if ($dti_exists): ?>
-											<?php if (file_is_image($_SERVER['DOCUMENT_ROOT'] . '/SME/' . $dti_path)): ?>
+											<?php if ($dti_exists && file_is_image($dti_full)): ?>
 												<!-- image: open full-screen in new tab -->
 												<a href="<?php echo $dti_url; ?>" class="file-link" target="_blank" rel="noopener noreferrer" aria-label="Open DTI in new tab">
 													<img src="<?php echo $dti_url; ?>" alt="DTI">
@@ -432,7 +435,7 @@ function get_file_icon_class($path) {
 									</div>
 									<div class="file-preview-thumb">
 										<?php if ($permit_exists): ?>
-											<?php if (file_is_image($_SERVER['DOCUMENT_ROOT'] . '/SME/' . $permit_path)): ?>
+											<?php if ($permit_exists && file_is_image($permit_full)): ?>
 												<!-- image: open full-screen in new tab -->
 												<a href="<?php echo $permit_url; ?>" class="file-link" target="_blank" rel="noopener noreferrer" aria-label="Open Permit in new tab">
 													<img src="<?php echo $permit_url; ?>" alt="Permit">
