@@ -137,10 +137,10 @@ if (isset($_GET['approve']) && isset($_GET['id_pending'])) {
 				mkdir($PROJECT_ROOT . '/dti/', 0755, true);
 			}
 			$dti_target_full_path = $PROJECT_ROOT . '/' . $DTI_target_file;
-            if (file_exists($dti_target_full_path)) {
-                $DTI_target_file = "dti/" . rand(1000,9999) . "_" . basename($temp_DTI);
-                $dti_target_full_path = $_SERVER['DOCUMENT_ROOT'] . '/SME/' . $DTI_target_file;
-            }
+			if (file_exists($dti_target_full_path)) {
+				$DTI_target_file = "dti/" . rand(1000,9999) . "_" . basename($temp_DTI);
+				$dti_target_full_path = $PROJECT_ROOT . '/' . $DTI_target_file;
+			}
             if (rename($dti_full_path, $dti_target_full_path)) {
                 $DTI = $DTI_target_file;
             }
@@ -155,10 +155,10 @@ if (isset($_GET['approve']) && isset($_GET['id_pending'])) {
 				mkdir($PROJECT_ROOT . '/business_permit/', 0755, true);
 			}
 			$permit_target_full_path = $PROJECT_ROOT . '/' . $business_permit_target_file;
-            if (file_exists($permit_target_full_path)) {
-                $business_permit_target_file = "business_permit/" . rand(1000,9999) . "_" . basename($temp_business_permit);
-                $permit_target_full_path = $_SERVER['DOCUMENT_ROOT'] . '/SME/' . $business_permit_target_file;
-            }
+			if (file_exists($permit_target_full_path)) {
+				$business_permit_target_file = "business_permit/" . rand(1000,9999) . "_" . basename($temp_business_permit);
+				$permit_target_full_path = $PROJECT_ROOT . '/' . $business_permit_target_file;
+			}
             if (rename($permit_full_path, $permit_target_full_path)) {
                 $business_permit = $business_permit_target_file;
             }

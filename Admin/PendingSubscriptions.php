@@ -85,6 +85,11 @@ require '../PHPMailer/src/Exception.php';
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
+// compute project root and base URL
+$PROJECT_ROOT = realpath(__DIR__ . '/../');
+$SITE_ROOT_PATH = rtrim(str_replace('\\', '/', dirname(dirname($_SERVER['SCRIPT_NAME']))), '/') . '/';
+$SITE_BASE_URL = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . $SITE_ROOT_PATH;
+
 $email = $_SESSION["email"];
 $query_account_type = mysqli_query($connections, "SELECT account_type FROM tbl_user WHERE email='$email'");
 $user_row = mysqli_fetch_assoc($query_account_type);
@@ -247,10 +252,10 @@ $total_earnings = floatval($earnings_row['tot'] ?? 0.00);
 						$plan_code = ''; // unknown / no-code
 					}
 
-                    $proof = $row['subscription_proof'] ? str_replace("\\","/",$row['subscription_proof']) : '';
-                    $proof_full = $proof ? $_SERVER['DOCUMENT_ROOT'] . '/SME/' . $proof : '';
+                    $proof = $row['subscription_proof'] ? str_replace('\\','/',$row['subscription_proof']) : '';
+                    $proof_full = $proof ? $PROJECT_ROOT . '/' . ltrim($proof, '/') : '';
                     $proof_exists = $proof && file_exists($proof_full);
-                    $proof_url = $proof_exists ? htmlspecialchars('/SME/' . $proof) : '';
+                    $proof_url = $proof_exists ? htmlspecialchars($SITE_BASE_URL . ltrim($proof, '/')) : '';
                     $approve_url = "PendingSubscriptions.php?id_user={$id_user}&approve=1";
                     $reject_url  = "PendingSubscriptions.php?id_user={$id_user}&reject=1";
                     ?>

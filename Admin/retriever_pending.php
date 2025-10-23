@@ -51,6 +51,9 @@
 <?php
 include("../connections.php");
 include ("nav.php");
+$PROJECT_ROOT = realpath(__DIR__ . '/../');
+$SITE_ROOT_PATH = rtrim(str_replace('\\', '/', dirname(dirname($_SERVER['SCRIPT_NAME']))), '/') . '/';
+$SITE_BASE_URL = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . $SITE_ROOT_PATH;
 $retrieve_query = mysqli_query($connections, "SELECT id_pending, first_name, middle_name, last_name, prefix, seven_digit, img, establishment_name, sabang_location, lot_street_business, business_type, nature_of_business, DTI, business_permit 
                                              FROM tbl_pending_users 
                                              WHERE account_type='pending'");
@@ -73,13 +76,18 @@ while($row = mysqli_fetch_assoc($retrieve_query)) {
     $full_name = ucfirst($db_first_name) . " " . ucfirst(isset($db_middle_name[0]) ? $db_middle_name[0] . "." : "") . " " . ucfirst($db_last_name);
     $contact = $db_prefix . $db_seven_digit;
     $full_address = ucfirst($db_sabang_location) . " " . ucfirst($db_lot_street_business);
-    $image_display = ($db_img && $db_img !== "0" && file_exists($_SERVER['DOCUMENT_ROOT'] . '/SME/' . $db_img)) ? "<a href='/SME/$db_img' target='_blank'><img src='/SME/$db_img' alt='User Image'></a>" : "No image";
-    $dti_path = str_replace("\\", "/", $db_DTI);
-    $dti_full_path = $_SERVER['DOCUMENT_ROOT'] . '/SME/' . $dti_path;
-    $dti_url = '/SME/' . $dti_path;
-    $permit_path = str_replace("\\", "/", $db_business_permit);
-    $permit_full_path = $_SERVER['DOCUMENT_ROOT'] . '/SME/' . $permit_path;
-    $permit_url = '/SME/' . $permit_path;
+    $image_path = $db_img && $db_img !== '0' ? str_replace('\\','/',$db_img) : '';
+    $image_full = $image_path ? $PROJECT_ROOT . '/' . ltrim($image_path, '/') : '';
+    $image_url = $image_path ? $SITE_BASE_URL . ltrim($image_path, '/') : '';
+    $image_display = ($image_full && file_exists($image_full)) ? "<a href='$image_url' target='_blank'><img src='$image_url' alt='User Image'></a>" : "No image";
+
+    $dti_path = $db_DTI && $db_DTI !== 'N/A' ? str_replace('\\','/',$db_DTI) : '';
+    $dti_full_path = $dti_path ? $PROJECT_ROOT . '/' . ltrim($dti_path, '/') : '';
+    $dti_url = $dti_path ? $SITE_BASE_URL . ltrim($dti_path, '/') : '';
+
+    $permit_path = $db_business_permit && $db_business_permit !== 'N/A' ? str_replace('\\','/',$db_business_permit) : '';
+    $permit_full_path = $permit_path ? $PROJECT_ROOT . '/' . ltrim($permit_path, '/') : '';
+    $permit_url = $permit_path ? $SITE_BASE_URL . ltrim($permit_path, '/') : '';
     $dti_display = ($dti_path && $dti_path !== "N/A" && file_exists($dti_full_path)) ? "<a href='$dti_url' target='_blank'><img src='$dti_url' alt='DTI'></a>" : "No image";
     $permit_display = ($permit_path && $permit_path !== "N/A" && file_exists($permit_full_path)) ? "<a href='$permit_url' target='_blank'><img src='$permit_url' alt='Business Permit'></a>" : "No image";
 
