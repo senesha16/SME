@@ -10,7 +10,7 @@ session_unset();
 session_destroy();
 
 echo "Logging out ... Please wait ...";
-echo "<script>window.location.href='/sme/login.php';</script>";
+echo "<script>window.location.href='login.php';</script>";
 exit();
 ?>
 ```
