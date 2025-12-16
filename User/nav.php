@@ -14,6 +14,7 @@ if ($query_info && mysqli_num_rows($query_info) > 0) {
     $user_name = "User";
 }
 
+
 // Get business information
 $business_query = mysqli_query($connections, "SELECT establishment_name FROM tbl_business WHERE id_user='$user_id'");
 $business_data = mysqli_fetch_assoc($business_query);

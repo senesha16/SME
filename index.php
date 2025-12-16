@@ -22,7 +22,7 @@
     <main class="hero-section">
         <div class="hero-content">
             <div class="hero-text">
-                <h1 class="hero-title">SME Management <span class="highlight">Simplified</span></h1>
+                <h1 class="hero-title">SME Managements <span class="highlight">Simplified</span></h1>
                 <p class="hero-description">
                     Manage your business permits and operations with ease. 
                     Simple, secure, and built for small businesses.
