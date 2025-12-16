@@ -1,83 +1,55 @@
 <?php
-session_start();
 include("nav.php");
-include("access_control.php");
 include("../connections.php");
 
-// Check if user is logged in
-if (!isset($_SESSION["email"]) || empty($_SESSION["email"])) {
-    error_log("confirm_delete_item.php: No user logged in, redirecting to login.php");
-    echo "<script>window.location.href='login.php';</script>";
-    exit;
-}
+// === FULLY STANDALONE MODE ===
+// No login required
+// No subscription checks
+// No account_type restrictions
+// All items are shared in the system (single inventory)
 
-// Check subscription plan
-$email = mysqli_real_escape_string($connections, $_SESSION["email"]);
-$query_info = mysqli_query($connections, "SELECT id_user, first_name, subscription_approved, subscription_plan, trial_start_date FROM tbl_user WHERE email='$email'");
-if ($query_info === false) {
-    error_log("confirm_delete_item.php: Database error: " . mysqli_error($connections));
-    echo "<script>alert('Database error. Please try again later.'); window.location.href='login.php';</script>";
-    exit;
-}
-$my_info = mysqli_fetch_assoc($query_info);
-if (!$my_info) {
-    error_log("confirm_delete_item.php: User not found for email: $email");
-    echo "<script>window.location.href='login.php';</script>";
-    exit;
-}
-$user_id = $my_info["id_user"];
-$full_name = $my_info["first_name"];
-$subscription_approved = $my_info["subscription_approved"];
-$subscription_plan = $my_info["subscription_plan"];
-$is_trial_active = false;
+// Fixed display name for header (change if you want a custom store name)
+$full_name = "Cashier";
 
-if ($my_info["trial_start_date"]) {
-    try {
-        $trial_start = new DateTime($my_info["trial_start_date"]);
-        $current_date = new DateTime();
-        $trial_duration = 30; // 30-day trial period
-        $days_since_trial = $trial_start->diff($current_date)->days;
-        $is_trial_active = $days_since_trial <= $trial_duration;
-    } catch (Exception $e) {
-        error_log("confirm_delete_item.php: DateTime error for $email: " . $e->getMessage());
-    }
-}
-
-$required_plan = ['A', 'B', 'C'];
-if (!$is_trial_active && (!$subscription_approved || !in_array($subscription_plan, $required_plan))) {
-    error_log("confirm_delete_item.php: Access denied for $email, trial expired or insufficient plan");
-    echo "<script>alert('Access denied. Please upgrade to Plan A, B, or C to delete items.'); window.location.href='MyAccount.php';</script>";
-    exit;
-}
-
+// Initialize variables
 $item_name = "";
-if (isset($_GET["delete"])) {
-    $id_item = mysqli_real_escape_string($connections, $_GET["delete"]);
-    $query = mysqli_query($connections, "SELECT name_item FROM tbl_item WHERE id_item='$id_item' AND id_user='$user_id'");
-    if ($query === false) {
-        error_log("confirm_delete_item.php: Query failed: " . mysqli_error($connections));
-        echo "<script>alert('Database error. Please try again later.'); window.location.href='view_stock.php';</script>";
-        exit;
-    }
-    if (mysqli_num_rows($query) > 0) {
-        $item = mysqli_fetch_assoc($query);
-        $item_name = $item["name_item"];
-    } else {
-        error_log("confirm_delete_item.php: Item not found for id_item: $id_item, user_id: $user_id");
-        echo "<script>alert('Item not found.'); window.location.href='view_stock.php';</script>";
-        exit;
-    }
+$id_item = "";
+
+// Check if an item ID is provided via GET
+if (!isset($_GET["delete"]) || empty($_GET["delete"])) {
+    echo "<script>alert('No item selected for deletion.'); window.location.href='view_stock.php';</script>";
+    exit;
 }
 
+// Sanitize and fetch item name
+$id_item = mysqli_real_escape_string($connections, $_GET["delete"]);
+$query = mysqli_query($connections, "SELECT name_item FROM tbl_item WHERE id_item='$id_item'");
+if ($query === false) {
+    echo "<script>alert('Database error. Please try again later.'); window.location.href='view_stock.php';</script>";
+    exit;
+}
+
+if (mysqli_num_rows($query) > 0) {
+    $item = mysqli_fetch_assoc($query);
+    $item_name = $item["name_item"];
+} else {
+    echo "<script>alert('Item not found.'); window.location.href='view_stock.php';</script>";
+    exit;
+}
+
+// Handle confirmed deletion
 if (isset($_POST["btnConfirmDelete"])) {
     $id_item = mysqli_real_escape_string($connections, $_POST["id_item"]);
-    $delete_query = mysqli_query($connections, "DELETE FROM tbl_item WHERE id_item='$id_item' AND id_user='$user_id'");
+    
+    // Delete the item (no id_user restriction — works on shared standalone inventory)
+    $delete_query = mysqli_query($connections, "DELETE FROM tbl_item WHERE id_item='$id_item'");
+    
     if ($delete_query) {
         echo "<script>alert('Item deleted successfully!'); window.location.href='view_stock.php?notify=Item deleted successfully!';</script>";
     } else {
-        error_log("confirm_delete_item.php: Delete failed: " . mysqli_error($connections));
         echo "<script>alert('Error deleting item: " . addslashes(mysqli_error($connections)) . "'); window.location.href='view_stock.php';</script>";
     }
+    exit;
 }
 ?>
 

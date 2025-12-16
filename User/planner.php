@@ -1,48 +1,16 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
 date_default_timezone_set('Asia/Manila');
 include("nav.php");
-include("check_subscription.php");
-include("access_control.php");
 include("../connections.php");
 
-if (!isset($_SESSION["email"]) || empty($_SESSION["email"])) {
-    error_log("planner.php: No user logged in, redirecting to login.php");
-    echo "<script>window.location.href='login.php';</script>";
-    exit;
-}
+// === CONFIGURATION ===
+// Change this to the correct user ID that owns the business/inventory
+$user_id = 16; // <-- UPDATE THIS IF NEEDED
 
-$email = mysqli_real_escape_string($connections, $_SESSION["email"]);
-$query_info = mysqli_query($connections, "SELECT id_user, first_name, subscription_approved, subscription_plan FROM tbl_user WHERE email='$email'");
-if (!$query_info) {
-    error_log("planner.php: Database error: " . mysqli_error($connections));
-    echo "<script>alert('Database error: " . mysqli_error($connections) . "'); window.location.href='login.php';</script>";
-    exit;
-}
-$my_info = mysqli_fetch_assoc($query_info);
-if (!$my_info) {
-    error_log("planner.php: User not found for email: $email");
-    echo "<script>window.location.href='login.php';</script>";
-    exit;
-}
-$user_id = $my_info["id_user"];
+// Fetch basic user info (for potential future use)
+$query_info = mysqli_query($connections, "SELECT first_name FROM tbl_user WHERE id_user='$user_id'");
+$my_info = $query_info && mysqli_num_rows($query_info) > 0 ? mysqli_fetch_assoc($query_info) : ['first_name' => ''];
 $full_name = $my_info["first_name"];
-$subscription_approved = $my_info["subscription_approved"];
-$subscription_plan = isset($_SESSION['effective_plan']) ? $_SESSION['effective_plan'] : $my_info["subscription_plan"];
-
-// Restrict access based on feature and plan
-$required_plan = ['B', 'C'];
-if (!$subscription_approved && !isset($_SESSION['effective_plan'])) {
-    error_log("planner.php: Access denied for $email, trial expired or no subscription");
-    echo "<script>alert('Access denied. Your trial has expired. Please subscribe.'); window.location.href='Subscribe.php';</script>";
-    exit;
-} elseif ($subscription_approved && !in_array($subscription_plan, $required_plan)) {
-    error_log("planner.php: Access denied for $email, plan $subscription_plan not sufficient");
-    echo "<script>alert('Access denied. Please upgrade to Plan " . implode(' or ', $required_plan) . ".'); window.location.href='MyAccount.php';</script>";
-    exit;
-}
 
 // Handle adding delivery
 if (isset($_POST["btnAddDelivery"])) {
@@ -67,9 +35,7 @@ if (isset($_POST["btnAddDelivery"])) {
                 $supplier_id = $supplier['id_supplier'];
                 if (!empty($contact_info)) {
                     $stmt_update = $connections->prepare("UPDATE tbl_supplier SET contact_info=? WHERE id_supplier=?");
-                    if ($stmt_update === false) {
-                        error_log("Prepare failed for supplier update: " . $connections->error);
-                    } else {
+                    if ($stmt_update !== false) {
                         $stmt_update->bind_param("si", $contact_info, $supplier_id);
                         $stmt_update->execute();
                         $stmt_update->close();
@@ -118,9 +84,7 @@ if (isset($_POST["btnAddDelivery"])) {
 if (isset($_POST["btnClaimDelivery"])) {
     $delivery_id = mysqli_real_escape_string($connections, $_POST["delivery_id"]);
     $stmt_claim = $connections->prepare("UPDATE tbl_delivery SET status='delivered' WHERE id_delivery=? AND id_user=? AND status='pending'");
-    if ($stmt_claim === false) {
-        error_log("Prepare failed for claim update: " . $connections->error);
-    } else {
+    if ($stmt_claim !== false) {
         $stmt_claim->bind_param("ii", $delivery_id, $user_id);
         if ($stmt_claim->execute()) {
             echo "<script>alert('Delivery marked as delivered!'); window.location.href='planner.php?month=$month&year=$year';</script>";
@@ -135,9 +99,7 @@ if (isset($_POST["btnClaimDelivery"])) {
 if (isset($_POST["btnCancelDelivery"])) {
     $delivery_id = mysqli_real_escape_string($connections, $_POST["delivery_id"]);
     $stmt_cancel = $connections->prepare("UPDATE tbl_delivery SET status='canceled' WHERE id_delivery=? AND id_user=? AND status='pending'");
-    if ($stmt_cancel === false) {
-        error_log("Prepare failed for cancel update: " . $connections->error);
-    } else {
+    if ($stmt_cancel !== false) {
         $stmt_cancel->bind_param("ii", $delivery_id, $user_id);
         if ($stmt_cancel->execute()) {
             echo "<script>alert('Delivery canceled!'); window.location.href='planner.php?month=$month&year=$year';</script>";
@@ -151,9 +113,7 @@ if (isset($_POST["btnCancelDelivery"])) {
 // Fetch expiration dates
 $expirations = [];
 $exp_query = mysqli_query($connections, "SELECT name_item, expiration_date_item FROM tbl_item WHERE id_user='$user_id' AND expiration_date_item >= CURDATE()");
-if (!$exp_query) {
-    error_log("planner.php: Expiration query failed: " . mysqli_error($connections));
-} else {
+if ($exp_query) {
     while ($exp = mysqli_fetch_assoc($exp_query)) {
         $date = $exp["expiration_date_item"];
         if (!isset($expirations[$date])) {
@@ -161,17 +121,13 @@ if (!$exp_query) {
         }
         $expirations[$date][] = $exp["name_item"];
     }
-    error_log("planner.php: Raw Expirations data: " . print_r($expirations, true)); // Debug raw data
 }
 $json_expirations = json_encode($expirations);
-error_log("planner.php: JSON Expirations: " . $json_expirations); // Debug JSON output
 
 // Fetch delivery dates with supplier names, contact info, and description
 $deliveries = [];
 $del_query = mysqli_query($connections, "SELECT d.id_delivery, d.expected_date, d.description, d.status, s.name AS supplier_name, s.contact_info FROM tbl_delivery d JOIN tbl_supplier s ON d.id_supplier = s.id_supplier WHERE d.id_user='$user_id'");
-if (!$del_query) {
-    error_log("planner.php: Delivery query failed: " . mysqli_error($connections));
-} else {
+if ($del_query) {
     while ($del = mysqli_fetch_assoc($del_query)) {
         $date = $del["expected_date"];
         if (!isset($deliveries[$date])) {
@@ -185,10 +141,8 @@ if (!$del_query) {
             'description' => $del["description"]
         ];
     }
-    error_log("planner.php: Raw Deliveries data: " . print_r($deliveries, true)); // Debug raw data
 }
 $json_deliveries = json_encode($deliveries);
-error_log("planner.php: JSON Deliveries: " . $json_deliveries); // Debug JSON output
 
 // Handle month navigation
 $month = isset($_GET['month']) ? intval($_GET['month']) : intval(date('m'));
@@ -203,6 +157,12 @@ $days_in_month = cal_days_in_month(CAL_GREGORIAN, $month, $year);
 $first_day = mktime(0, 0, 0, $month, 1, $year);
 $day_of_week = date('w', $first_day);
 $current_date = date('Y-m-d');
+
+$months = [
+    1 => 'January', 2 => 'February', 3 => 'March', 4 => 'April',
+    5 => 'May', 6 => 'June', 7 => 'July', 8 => 'August',
+    9 => 'September', 10 => 'October', 11 => 'November', 12 => 'December'
+];
 ?>
 
 <!DOCTYPE html>
@@ -217,23 +177,15 @@ $current_date = date('Y-m-d');
 </head>
 <body class="calendar-page">
     <main class="main-content">
-        <!-- Page Header -->
-
-
         <div class="container">
             <div class="section">
                 <div class="calendar-nav">
                     <button onclick="navigateMonth('prev')" class="nav-btn">
-                        <i class="fas fa-chevron-left"></i> Previous
+                        Previous
                     </button>
                     <div class="month-year-controls">
                         <select id="monthSelect" onchange="jumpToMonth()">
                             <?php
-                            $months = [
-                                1 => 'January', 2 => 'February', 3 => 'March', 4 => 'April',
-                                5 => 'May', 6 => 'June', 7 => 'July', 8 => 'August',
-                                9 => 'September', 10 => 'October', 11 => 'November', 12 => 'December'
-                            ];
                             foreach ($months as $m => $name) {
                                 $selected = $m == $month ? 'selected' : '';
                                 echo "<option value='$m' $selected>$name</option>";
@@ -252,11 +204,11 @@ $current_date = date('Y-m-d');
                         </select>
                     </div>
                     <button onclick="navigateMonth('next')" class="nav-btn">
-                        Next <i class="fas fa-chevron-right"></i>
+                        Next
                     </button>
                 </div>
 
-                <h3><i class="fas fa-calendar"></i> Calendar - <?php echo $months[$month] . ' ' . $year; ?></h3>
+                <h3>Calendar - <?php echo $months[$month] . ' ' . $year; ?></h3>
                 <table class="calendar">
                     <tr>
                         <th>Sun</th>
@@ -274,19 +226,19 @@ $current_date = date('Y-m-d');
                         }
                         $day = 1;
                         while ($day <= $days_in_month) {
-                            $current_date = sprintf("%04d-%02d-%02d", $year, $month, $day);
-                            $class = date('Y-m-d') === $current_date ? 'today' : '';
-                            echo "<td class='$class' onclick='showDetails(\"$current_date\")'>";
+                            $current_date_str = sprintf("%04d-%02d-%02d", $year, $month, $day);
+                            $class = date('Y-m-d') === $current_date_str ? 'today' : '';
+                            echo "<td class='$class' onclick='showDetails(\"$current_date_str\")'>";
                             echo "<div class='day-number'>$day</div>";
-                            if (isset($expirations[$current_date])) {
+                            if (isset($expirations[$current_date_str])) {
                                 echo "<div class='event'><strong>Expirations:</strong><br>";
-                                foreach ($expirations[$current_date] as $item) {
+                                foreach ($expirations[$current_date_str] as $item) {
                                     echo "• " . htmlspecialchars($item) . "<br>";
                                 }
                                 echo "</div>";
                             }
-                            if (isset($deliveries[$current_date])) {
-                                foreach ($deliveries[$current_date] as $delivery) {
+                            if (isset($deliveries[$current_date_str])) {
+                                foreach ($deliveries[$current_date_str] as $delivery) {
                                     $status_class = $delivery['status'];
                                     echo "<div class='delivery $status_class'>";
                                     echo "<strong>" . htmlspecialchars($delivery['supplier_name']) . "</strong>";
@@ -326,31 +278,31 @@ $current_date = date('Y-m-d');
             </div>
 
             <div class="form-section">
-                <h3><i class="fas fa-truck"></i> Add New Delivery</h3>
+                <h3>Add New Delivery</h3>
                 <form method="POST">
                     <table>
                         <tr>
                             <td>
-                                <label for="supplier_name"><i class="fas fa-building"></i> Supplier Name:</label>
+                                <label for="supplier_name">Supplier Name:</label>
                                 <input type="text" id="supplier_name" name="supplier_name" placeholder="Enter supplier name" value="<?php echo isset($_POST['supplier_name']) ? htmlspecialchars($_POST['supplier_name']) : ''; ?>">
                                 <span class="error"><?php echo !empty($supplier_name) || !isset($_POST['btnAddDelivery']) ? '' : 'Supplier name required!'; ?></span>
                             </td>
                         </tr>
                         <tr>
                             <td>
-                                <label for="contact_info"><i class="fas fa-phone"></i> Contact Info (optional):</label>
+                                <label for="contact_info">Contact Info (optional):</label>
                                 <input type="text" id="contact_info" name="contact_info" placeholder="Phone number or email" value="<?php echo isset($_POST['contact_info']) ? htmlspecialchars($_POST['contact_info']) : ''; ?>">
                             </td>
                         </tr>
                         <tr>
                             <td>
-                                <label for="description"><i class="fas fa-clipboard"></i> Description (optional):</label>
+                                <label for="description">Description (optional):</label>
                                 <textarea id="description" name="description" placeholder="Enter delivery details, items, notes..."><?php echo isset($_POST['description']) ? htmlspecialchars($_POST['description']) : ''; ?></textarea>
                             </td>
                         </tr>
                         <tr>
                             <td>
-                                <label for="expected_date"><i class="fas fa-calendar-day"></i> Expected Delivery Date:</label>
+                                <label for="expected_date">Expected Delivery Date:</label>
                                 <input type="date" id="expected_date" name="expected_date" min="<?php echo date('Y-m-d'); ?>" value="<?php echo isset($_POST['expected_date']) ? htmlspecialchars($_POST['expected_date']) : ''; ?>">
                                 <span class="error"><?php echo !empty($expected_date) || !isset($_POST['btnAddDelivery']) ? '' : 'Date required!'; ?></span>
                             </td>
@@ -369,7 +321,7 @@ $current_date = date('Y-m-d');
 
     <div id="detailsModal" role="dialog" aria-hidden="true">
         <div class="modal-content">
-            <span class="close" onclick="closeDetailsModal()">&times;</span>
+            <span class="close" onclick="closeDetailsModal()">×</span>
             <div id="detailsContent"></div>
         </div>
     </div>
@@ -377,27 +329,18 @@ $current_date = date('Y-m-d');
     <script>
         const EXPIRATIONS = <?php echo $json_expirations; ?>;
         const DELIVERIES = <?php echo $json_deliveries; ?>;
-        console.log('EXPIRATIONS:', EXPIRATIONS); // Debug log with correct variable
-        console.log('DELIVERIES:', DELIVERIES);   // Debug log with correct variable
         const currentMonth = <?php echo $month; ?>;
         const currentYear = <?php echo $year; ?>;
 
         function showDetails(date) {
-            const expirations = EXPIRATIONS || {}; // Use const variable directly
-            const deliveries = DELIVERIES || {};   // Use const variable directly
+            const expirations = EXPIRATIONS || {};
+            const deliveries = DELIVERIES || {};
             const modal = document.getElementById('detailsModal');
-            const modalContent = modal.querySelector('.modal-content');
             const content = document.getElementById('detailsContent');
 
-            console.log('Clicked date:', date); // Debug clicked date
-            console.log('Expirations for date:', expirations[date]); // Debug specific date data
-            console.log('Deliveries for date:', deliveries[date]);   // Debug specific date data
+            let html = `<h4 class="modal-date">${escapeHtml(date)}</h4>`;
 
-            let formattedDate = date; // Ensure exact match with PHP date format
-
-            let html = `<h4 class="modal-date">${escapeHtml(formattedDate)}</h4>`;
-
-            if (expirations && expirations[date] && expirations[date].length) {
+            if (expirations[date] && expirations[date].length) {
                 html += `<div class="modal-section"><strong>Expirations:</strong><ul>`;
                 expirations[date].forEach(item => {
                     html += `<li>${escapeHtml(item)}</li>`;
@@ -407,7 +350,7 @@ $current_date = date('Y-m-d');
                 html += `<div class="modal-section"><strong>Expirations:</strong><p><em>None</em></p></div>`;
             }
 
-            if (deliveries && deliveries[date] && deliveries[date].length) {
+            if (deliveries[date] && deliveries[date].length) {
                 html += `<div class="modal-section"><strong>Deliveries:</strong>`;
                 deliveries[date].forEach(d => {
                     html += `<div class="delivery-row ${d.status}"><strong>${escapeHtml(d.supplier_name)}</strong> <span class="status">(${escapeHtml(d.status)})</span>`;
@@ -457,16 +400,16 @@ $current_date = date('Y-m-d');
         });
 
         function navigateMonth(action) {
-            let currentMonth = <?php echo $month; ?>;
-            let currentYear = <?php echo $year; ?>;
+            let m = currentMonth;
+            let y = currentYear;
             if (action === 'prev') {
-                currentMonth = currentMonth === 1 ? 12 : currentMonth - 1;
-                currentYear = currentMonth === 12 ? currentYear - 1 : currentYear;
+                m = m === 1 ? 12 : m - 1;
+                y = m === 12 ? y - 1 : y;
             } else if (action === 'next') {
-                currentMonth = currentMonth === 12 ? 1 : currentMonth + 1;
-                currentYear = currentMonth === 1 ? currentYear + 1 : currentYear;
+                m = m === 12 ? 1 : m + 1;
+                y = m === 1 ? y + 1 : y;
             }
-            window.location.href = `planner.php?month=${currentMonth}&year=${currentYear}`;
+            window.location.href = `planner.php?month=${m}&year=${y}`;
         }
 
         function jumpToMonth() {

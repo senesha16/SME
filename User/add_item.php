@@ -3,47 +3,14 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 date_default_timezone_set('Asia/Manila');
-include("nav.php"); // Adjust to "../nav.php" if in parent directory
-include("check_subscription.php");
-include("access_control.php");
-
+include("nav.php"); // Keep your nav include
 include("../connections.php");
 
-if (!isset($_SESSION["email"]) || empty($_SESSION["email"])) {
-    error_log("add_item.php: No user logged in, redirecting to login.php");
-    echo "<script>window.location.href='login.php';</script>";
-    exit;
-}
-
-$email = mysqli_real_escape_string($connections, $_SESSION["email"]);
-$query_info = mysqli_query($connections, "SELECT id_user, first_name, subscription_approved, subscription_plan FROM tbl_user WHERE email='$email'");
-if (!$query_info) {
-    error_log("add_item.php: Database error: " . mysqli_error($connections));
-    echo "<script>alert('Database error: " . mysqli_error($connections) . "'); window.location.href='login.php';</script>";
-    exit;
-}
-$my_info = mysqli_fetch_assoc($query_info);
-if (!$my_info) {
-    error_log("add_item.php: User not found for email: $email");
-    echo "<script>window.location.href='login.php';</script>";
-    exit;
-}
-$user_id = $my_info["id_user"];
-$full_name = $my_info["first_name"];
-$subscription_approved = $my_info["subscription_approved"];
-$subscription_plan = isset($_SESSION['effective_plan']) ? $_SESSION['effective_plan'] : $my_info["subscription_plan"];
-
-// Restrict access based on feature and plan
-$required_plan = ['A', 'B', 'C'];
-if (!$subscription_approved && !isset($_SESSION['effective_plan'])) {
-    error_log("add_item.php: Access denied for $email, trial expired or no subscription");
-    echo "<script>alert('Access denied. Your trial has expired. Please subscribe.'); window.location.href='Subscribe.php';</script>";
-    exit;
-} elseif ($subscription_approved && !in_array($subscription_plan, $required_plan)) {
-    error_log("add_item.php: Access denied for $email, plan $subscription_plan not sufficient");
-    echo "<script>alert('Access denied. Please upgrade to Plan " . implode(' or ', $required_plan) . ".'); window.location.href='MyAccount.php';</script>";
-    exit;
-}
+// === FULLY STANDALONE MODE ===
+// No login required
+// All items belong to the shared system inventory
+$user_id = 16; // Fixed ID for all new items (safe for your current DB structure)
+$full_name = "Cashier"; // Optional display name
 
 // Initialize form variables
 $name_item = $category_item = $brand_item = $size_item = $quantity_item = $unit_item = $cost_price_item = $selling_price_pack = $selling_price_individual = $expiration_date_item = "";
@@ -54,7 +21,8 @@ $sell_asErr = "";
 $id_item = isset($_GET["edit"]) ? mysqli_real_escape_string($connections, $_GET["edit"]) : null;
 
 if ($id_item) {
-    $edit_query = mysqli_query($connections, "SELECT * FROM tbl_item WHERE id_item='$id_item' AND id_user='$user_id'");
+    // No id_user filter — allow editing any item in standalone mode
+    $edit_query = mysqli_query($connections, "SELECT * FROM tbl_item WHERE id_item='$id_item'");
     if ($edit_query === false) {
         die("Edit query failed: " . mysqli_error($connections));
     }
@@ -134,10 +102,9 @@ if (isset($_POST["btnAddItem"])) {
         $availability_status = ($quantity_item > 0) ? "available" : "unavailable";
 
         if ($id_item) {
-            // Update existing item
-            $stmt = $connections->prepare("UPDATE tbl_item SET name_item=?, category_item=?, brand_item=?, size_item=?, quantity_item=?, unit_item=?, cost_price_item=?, selling_price_item=?, selling_price_individual=?, availability_status_item=?, expiration_date_item=?, items_per_unit=?, sell_as_pack=?, sell_as_sachet=? WHERE id_item=? AND id_user=?");
+            // Update existing item (no id_user condition)
+            $stmt = $connections->prepare("UPDATE tbl_item SET name_item=?, category_item=?, brand_item=?, size_item=?, quantity_item=?, unit_item=?, cost_price_item=?, selling_price_item=?, selling_price_individual=?, availability_status_item=?, expiration_date_item=?, items_per_unit=?, sell_as_pack=?, sell_as_sachet=? WHERE id_item=?");
             if ($stmt === false) {
-                error_log("Prepare failed for update: " . $connections->error);
                 echo "<script>alert('Error preparing update query: " . addslashes($connections->error) . "');</script>";
             } else {
                 $u_name = $name_item;
@@ -155,14 +122,12 @@ if (isset($_POST["btnAddItem"])) {
                 $u_sell_as_pack = (int)$sell_as_pack;
                 $u_sell_as_sachet = (int)$sell_as_sachet;
                 $u_id_item = (int)$id_item;
-                $u_user_id = (int)$user_id;
 
-                $stmt->bind_param("sssssisddsssiiii", $u_name, $u_category, $u_brand, $u_size, $u_quantity, $u_unit, $u_cost, $u_sellpack, $u_sellind, $u_avail, $u_expiration, $u_items_per_unit, $u_sell_as_pack, $u_sell_as_sachet, $u_id_item, $u_user_id);
+                $stmt->bind_param("sssssisddsssii", $u_name, $u_category, $u_brand, $u_size, $u_quantity, $u_unit, $u_cost, $u_sellpack, $u_sellind, $u_avail, $u_expiration, $u_items_per_unit, $u_sell_as_pack, $u_sell_as_sachet, $u_id_item);
 
                 if ($stmt->execute()) {
                     echo "<script>window.location.href='view_stock.php?notify=Item updated successfully!';</script>";
                 } else {
-                    error_log("Update error: " . $stmt->error);
                     echo "<script>alert('Error updating item: " . addslashes($stmt->error) . "');</script>";
                 }
                 $stmt->close();
@@ -171,7 +136,6 @@ if (isset($_POST["btnAddItem"])) {
             // Insert new item
             $stmt = $connections->prepare("INSERT INTO tbl_item (id_user, name_item, category_item, brand_item, size_item, quantity_item, unit_item, cost_price_item, selling_price_item, selling_price_individual, availability_status_item, expiration_date_item, items_per_unit, sell_as_pack, sell_as_sachet) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
             if ($stmt === false) {
-                error_log("Prepare failed for insert: " . $connections->error);
                 echo "<script>alert('Error preparing insert query: " . addslashes($connections->error) . "');</script>";
             } else {
                 $i_user_id = (int)$user_id;
@@ -195,7 +159,6 @@ if (isset($_POST["btnAddItem"])) {
                 if ($stmt->execute()) {
                     echo "<script>window.location.href='view_stock.php?notify=Item added successfully!';</script>";
                 } else {
-                    error_log("Insert error: " . $stmt->error);
                     echo "<script>alert('Error: " . addslashes($stmt->error) . "');</script>";
                 }
                 $stmt->close();
@@ -212,7 +175,7 @@ if (isset($_POST["btnAddItem"])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $id_item ? 'Edit Item' : 'Add New Item'; ?> - SME Dashboard</title>
     <link rel="stylesheet" href="user-items.css">
-    <link rel="stylesheet" href="user-dashboard.css"> <!-- Added to match nav integration -->
+    <link rel="stylesheet" href="user-dashboard.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 
     <script>
@@ -302,7 +265,7 @@ if (isset($_POST["btnAddItem"])) {
             display: flex;
             align-items: center;
             gap: 10px;
-            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; /* match Inventory Management header font */
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
         }
         .header-content p {
             margin: 0;
@@ -422,9 +385,6 @@ if (isset($_POST["btnAddItem"])) {
         }
         @media (max-width: 768px) {
             .main-content { margin-left: 0; padding: 15px; }
-            .transaction-section { margin: 15px; padding: 20px; }
-            .form-group { min-width: 100%; }
-            .earnings-container { flex-direction: column; text-align: center; }
         }
     </style>
 </head>
@@ -475,19 +435,19 @@ if (isset($_POST["btnAddItem"])) {
                             <i class="fas fa-list"></i>
                             Category
                         </label>
-                       <select name="category_item" class="form-select">
-                        <option value="">Select Category</option>
-                       <option value="Wet Goods" <?php echo $category_item == "Wet Goods" ? "selected" : ""; ?>>Wet Goods</option>
-                       <option value="Dry Goods" <?php echo $category_item == "Dry Goods" ? "selected" : ""; ?>>Dry Goods</option>
-                      <option value="Perishable" <?php echo $category_item == "Perishable" ? "selected" : ""; ?>>Perishable</option>
-                       <option value="Non-Perishable" <?php echo $category_item == "Non-Perishable" ? "selected" : ""; ?>>Non-Perishable</option>
-                        <option value="Frozen" <?php echo $category_item == "Frozen" ? "selected" : ""; ?>>Frozen</option>
-                       <option value="Ambient" <?php echo $category_item == "Ambient" ? "selected" : ""; ?>>Ambient</option>
-                       <option value="Bulk" <?php echo $category_item == "Bulk" ? "selected" : ""; ?>>Bulk</option>
-                       <option value="Packaged" <?php echo $category_item == "Packaged" ? "selected" : ""; ?>>Packaged</option>
-                       <option value="Raw Materials" <?php echo $category_item == "Raw Materials" ? "selected" : ""; ?>>Raw Materials</option>
-                        <option value="Others" <?php echo $category_item == "Others" ? "selected" : ""; ?>>Others</option>
-                       </select>
+                        <select name="category_item" class="form-select">
+                            <option value="">Select Category</option>
+                            <option value="Wet Goods" <?php echo $category_item == "Wet Goods" ? "selected" : ""; ?>>Wet Goods</option>
+                            <option value="Dry Goods" <?php echo $category_item == "Dry Goods" ? "selected" : ""; ?>>Dry Goods</option>
+                            <option value="Perishable" <?php echo $category_item == "Perishable" ? "selected" : ""; ?>>Perishable</option>
+                            <option value="Non-Perishable" <?php echo $category_item == "Non-Perishable" ? "selected" : ""; ?>>Non-Perishable</option>
+                            <option value="Frozen" <?php echo $category_item == "Frozen" ? "selected" : ""; ?>>Frozen</option>
+                            <option value="Ambient" <?php echo $category_item == "Ambient" ? "selected" : ""; ?>>Ambient</option>
+                            <option value="Bulk" <?php echo $category_item == "Bulk" ? "selected" : ""; ?>>Bulk</option>
+                            <option value="Packaged" <?php echo $category_item == "Packaged" ? "selected" : ""; ?>>Packaged</option>
+                            <option value="Raw Materials" <?php echo $category_item == "Raw Materials" ? "selected" : ""; ?>>Raw Materials</option>
+                            <option value="Others" <?php echo $category_item == "Others" ? "selected" : ""; ?>>Others</option>
+                        </select>
                         <?php if ($category_itemErr): ?>
                             <div class="error-message">
                                 <i class="fas fa-exclamation-circle"></i>
@@ -524,17 +484,17 @@ if (isset($_POST["btnAddItem"])) {
                             <i class="fas fa-expand-arrows-alt"></i>
                             Size
                         </label>
-                       <select name="size_item" class="form-select">
-                      <option value="">Select Size or Volume</option>
-                      <option value="standard_size" <?php echo $size_item == "standard_size" ? "selected" : ""; ?>>Standard Size</option>
-                     <option value="small" <?php echo $size_item == "small" ? "selected" : ""; ?>>Small</option>
-                      <option value="medium" <?php echo $size_item == "medium" ? "selected" : ""; ?>>Medium</option>
-                       <option value="large" <?php echo $size_item == "large" ? "selected" : ""; ?>>Large</option>
-                       <option value="250ml" <?php echo $size_item == "250ml" ? "selected" : ""; ?>>250 ml</option>
-                      <option value="500ml" <?php echo $size_item == "500ml" ? "selected" : ""; ?>>500 ml</option>
-                      <option value="1L" <?php echo $size_item == "1L" ? "selected" : ""; ?>>1 Liter</option>
-                      <option value="2L" <?php echo $size_item == "2L" ? "selected" : ""; ?>>2 Liters</option>
-                    </select>
+                        <select name="size_item" class="form-select">
+                            <option value="">Select Size or Volume</option>
+                            <option value="standard_size" <?php echo $size_item == "standard_size" ? "selected" : ""; ?>>Standard Size</option>
+                            <option value="small" <?php echo $size_item == "small" ? "selected" : ""; ?>>Small</option>
+                            <option value="medium" <?php echo $size_item == "medium" ? "selected" : ""; ?>>Medium</option>
+                            <option value="large" <?php echo $size_item == "large" ? "selected" : ""; ?>>Large</option>
+                            <option value="250ml" <?php echo $size_item == "250ml" ? "selected" : ""; ?>>250 ml</option>
+                            <option value="500ml" <?php echo $size_item == "500ml" ? "selected" : ""; ?>>500 ml</option>
+                            <option value="1L" <?php echo $size_item == "1L" ? "selected" : ""; ?>>1 Liter</option>
+                            <option value="2L" <?php echo $size_item == "2L" ? "selected" : ""; ?>>2 Liters</option>
+                        </select>
                         <?php if ($size_itemErr): ?>
                             <div class="error-message">
                                 <i class="fas fa-exclamation-circle"></i>
@@ -567,7 +527,6 @@ if (isset($_POST["btnAddItem"])) {
                             <option value="piece" <?php echo $unit_item == "piece" ? "selected" : ""; ?>>Piece</option>
                             <option value="pack" <?php echo $unit_item == "pack" ? "selected" : ""; ?>>Pack</option>
                             <option value="box" <?php echo $unit_item == "box" ? "selected" : ""; ?>>Box</option>
-
                         </select>
                         <?php if ($unit_itemErr): ?>
                             <div class="error-message">
@@ -707,40 +666,36 @@ if (isset($_POST["btnAddItem"])) {
         </form>
     </main>
 
-	<!-- Sidebar-width measurement script: sets --sidebar-width so .main-content won't overlap -->
-	<script>
-		(function(){
-			function updateSidebarWidth(){
-				try {
-					var sidebar = document.querySelector('.sidebar-nav');
-					if (!sidebar) return;
-					var style = window.getComputedStyle(sidebar);
-					var rect = sidebar.getBoundingClientRect();
-					var width = Math.round(rect.width) || 0;
-					// Treat hidden or very small sidebars as 0 (mobile collapse)
-					if (style.display === 'none' || width < 40) width = 0;
-					// write the CSS variable (fallback preserved in calc())
-					document.documentElement.style.setProperty('--sidebar-width', width + 'px');
-				} catch (e) {
-					console.warn('Sidebar width measurement failed', e);
-				}
-			}
-			document.addEventListener('DOMContentLoaded', function(){
-				updateSidebarWidth();
-				var resizeTimer;
-				window.addEventListener('resize', function(){
-					clearTimeout(resizeTimer);
-					resizeTimer = setTimeout(updateSidebarWidth, 120);
-				});
-				// Observe sidebar changes (e.g. toggles) and update width
-				var sb = document.querySelector('.sidebar-nav');
-				if (sb) {
-					var mo = new MutationObserver(function(){ updateSidebarWidth(); });
-					mo.observe(sb, { childList: true, attributes: true, subtree: true });
-				}
-			});
-		})();
-	</script>
-
+    <!-- Sidebar-width measurement script -->
+    <script>
+        (function(){
+            function updateSidebarWidth(){
+                try {
+                    var sidebar = document.querySelector('.sidebar-nav');
+                    if (!sidebar) return;
+                    var style = window.getComputedStyle(sidebar);
+                    var rect = sidebar.getBoundingClientRect();
+                    var width = Math.round(rect.width) || 0;
+                    if (style.display === 'none' || width < 40) width = 0;
+                    document.documentElement.style.setProperty('--sidebar-width', width + 'px');
+                } catch (e) {
+                    console.warn('Sidebar width measurement failed', e);
+                }
+            }
+            document.addEventListener('DOMContentLoaded', function(){
+                updateSidebarWidth();
+                var resizeTimer;
+                window.addEventListener('resize', function(){
+                    clearTimeout(resizeTimer);
+                    resizeTimer = setTimeout(updateSidebarWidth, 120);
+                });
+                var sb = document.querySelector('.sidebar-nav');
+                if (sb) {
+                    var mo = new MutationObserver(function(){ updateSidebarWidth(); });
+                    mo.observe(sb, { childList: true, attributes: true, subtree: true });
+                }
+            });
+        })();
+    </script>
 </body>
 </html>

@@ -11,11 +11,10 @@
         <div class="nav-container">
             <div class="nav-logo">
                 <img src="sabang_logo.png" alt="Logo" class="logo-img">
-                <span class="nav-title">SME Systeme</span>
+                <span class="nav-title">SME System</span>
             </div>
             <div class="nav-links">
-                <a href="login.php" class="nav-link">Login</a>
-                <a href="register.php" class="nav-link nav-btn">Register</a>
+                <!-- Login/Register removed - direct access to system -->
             </div>
         </div>
     </nav>
@@ -29,8 +28,8 @@
                     Simple, secure, and built for small businesses.
                 </p>
                 <div class="hero-buttons">
-                    <a href="register.php" class="btn btn-primary">Get Started</a>
-                    <a href="login.php" class="btn btn-secondary">Sign In</a>
+                    <a href="user/index.php" class="btn btn-primary">Get Started</a>
+                    <!-- Sign In / Sign Out removed -->
                 </div>
             </div>
         </div>
@@ -71,7 +70,7 @@
                 
                 <div class="feature-item feature-tertiary">
                     <div class="feature-icon-container">
-                        <div class="feature-icon-large">�️</div>
+                        <div class="feature-icon-large">🛡️</div>
                         <div class="icon-glow"></div>
                     </div>
                     <h3>Enterprise Security</h3>
@@ -101,7 +100,7 @@
                 
                 <div class="feature-item">
                     <div class="feature-icon-container">
-                        <div class="feature-icon-large">�</div>
+                        <div class="feature-icon-large">🔗</div>
                         <div class="icon-glow"></div>
                     </div>
                     <h3>Seamless Integration</h3>
@@ -113,7 +112,7 @@
                 <div class="cta-content">
                     <h3>Ready to Transform Your Business?</h3>
                     <p>Join thousands of successful SMEs already using our platform</p>
-                    <a href="register.php" class="btn btn-cta">
+                    <a href="user/index.php" class="btn btn-cta">
                         Start Your Free Trial
                         <svg class="btn-arrow" viewBox="0 0 24 24" width="20" height="20">
                             <path d="M5 12h14m-7-7 7 7-7 7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
@@ -132,8 +131,7 @@
                     <span class="footer-title">SME Management System</span>
                 </div>
                 <div class="footer-links">
-                    <a href="login.php" class="footer-link">Login</a>
-                    <a href="register.php" class="footer-link">Register</a>
+                    <a href="user/index.php" class="footer-link">Dashboard</a>
                 </div>
             </div>
             <div class="footer-bottom">

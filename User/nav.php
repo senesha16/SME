@@ -1,44 +1,17 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
 include("../connections.php");
 
-if (!isset($_SESSION["email"]) || empty($_SESSION["email"])) {
-    error_log("nav.php: No user logged in, redirecting to login.php");
-    echo "<script>window.location.href='login.php';</script>";
-    exit;
-}
+// === CONFIGURATION ===
+// Change this to the correct user ID that owns the business/account
+$user_id = 16; // <-- UPDATE THIS IF YOUR MAIN USER HAS A DIFFERENT ID
 
 // Get user information
-$email = mysqli_real_escape_string($connections, $_SESSION["email"]);
-$query_info = mysqli_query($connections, "SELECT id_user, first_name, last_name, subscription_approved, subscription_plan, trial_start_date, account_type FROM tbl_user WHERE email='$email'");
-
-if ($query_info === false) {
-    error_log("nav.php: Query failed: " . mysqli_error($connections));
-    echo "<script>alert('Database error. Please try again later.'); window.location.href='login.php';</script>";
-    exit;
-}
-
-$my_info = mysqli_fetch_assoc($query_info);
-if (!$my_info) {
-    echo "<script>alert('User not found.'); window.location.href='login.php';</script>";
-    exit;
-}
-
-$user_id = $my_info["id_user"];
-$user_name = htmlspecialchars($my_info["first_name"] . ' ' . $my_info["last_name"]);
-$subscription_approved = $my_info["subscription_approved"];
-$subscription_plan = $my_info["subscription_plan"];
-$account_type = $my_info["account_type"];
-$is_trial_active = false;
-
-if ($my_info["trial_start_date"]) {
-    $trial_start = new DateTime($my_info["trial_start_date"]);
-    $current_date = new DateTime();
-    $trial_duration = 60; // 1 minute for testing
-    $seconds_since_trial = $trial_start->diff($current_date)->s + ($trial_start->diff($current_date)->i * 60);
-    $is_trial_active = $seconds_since_trial <= $trial_duration;
+$query_info = mysqli_query($connections, "SELECT first_name, last_name FROM tbl_user WHERE id_user='$user_id'");
+if ($query_info && mysqli_num_rows($query_info) > 0) {
+    $my_info = mysqli_fetch_assoc($query_info);
+    $user_name = htmlspecialchars($my_info["first_name"] . ' ' . $my_info["last_name"]);
+} else {
+    $user_name = "User";
 }
 
 // Get business information
@@ -62,10 +35,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
                 <i class="fas fa-user-circle"></i>
                 <span class="user-name"><?php echo $user_name; ?></span>
             </div>
-            <a href="../logout.php" class="logout-btn">
-                <i class="fas fa-sign-out-alt"></i>
-                Logout
-            </a>
+            <!-- Logout button removed - system is now standalone and fully free -->
         </div>
     </div>
 </nav>
@@ -85,43 +55,27 @@ $current_page = basename($_SERVER['PHP_SELF']);
                 <i class="fas fa-user"></i>
                 <span>My Account</span>
             </a>
-            <?php if ($is_trial_active || ($subscription_approved && in_array($subscription_plan, ['A', 'B', 'C']))): ?>
-                <a href="view_stock.php" class="nav-item <?php echo ($current_page == 'view_stock.php') ? 'active' : ''; ?>">
-                    <i class="fas fa-boxes"></i>
-                    <span>View Stock</span>
-                </a>
-                <a href="adjust_stock.php" class="nav-item <?php echo ($current_page == 'adjust_stock.php') ? 'active' : ''; ?>">
-                    <i class="fas fa-edit"></i>
-                    <span>Adjust Stock</span>
-                </a>
-                <a href="add_item.php" class="nav-item <?php echo ($current_page == 'add_item.php') ? 'active' : ''; ?>">
-                    <i class="fas fa-plus-circle"></i>
-                    <span>Add Item</span>
-                </a>
-            <?php endif; ?>
-            <?php if ($is_trial_active || ($subscription_approved && in_array($subscription_plan, ['B', 'C']))): ?>
-                <a href="planner.php" class="nav-item <?php echo ($current_page == 'planner.php') ? 'active' : ''; ?>">
-                    <i class="fas fa-calendar-alt"></i>
-                    <span>Calendar</span>
-                </a>
-            <?php endif; ?>
-            <?php if ($is_trial_active || ($subscription_approved && $subscription_plan == 'C')): ?>
-                <a href="transaction.php" class="nav-item <?php echo ($current_page == 'transaction.php') ? 'active' : ''; ?>">
-                    <i class="fas fa-receipt"></i>
-                    <span>Transactions</span>
-                </a>
-            <?php endif; ?>
-            <?php if ($account_type == '1'): ?>
-                <a href="check_subscription.php" class="nav-item <?php echo ($current_page == 'check_subscription.php') ? 'active' : ''; ?>">
-                    <i class="fas fa-cogs"></i>
-                    <span>Manage Subscriptions</span>
-                </a>
-            <?php endif; ?>
-            <?php if (!$is_trial_active && !$subscription_approved): ?>
-                <a href="subscribe.php" class="nav-item <?php echo ($current_page == 'subscribe.php') ? 'active' : ''; ?>">
-                    <i class="fas fa-credit-card"></i>
-                    <span>Choose Subscription Plan</span>
-                </a>
-            <?php endif; ?>
+            
+            <!-- ALL FEATURES NOW PERMANENTLY AVAILABLE - FULLY FREE SYSTEM -->
+            <a href="view_stock.php" class="nav-item <?php echo ($current_page == 'view_stock.php') ? 'active' : ''; ?>">
+                <i class="fas fa-boxes"></i>
+                <span>View Stock</span>
+            </a>
+            <a href="adjust_stocks.php" class="nav-item <?php echo ($current_page == 'adjust_stocks.php') ? 'active' : ''; ?>">
+                <i class="fas fa-edit"></i>
+                <span>Adjust Stock</span>
+            </a>
+            <a href="add_item.php" class="nav-item <?php echo ($current_page == 'add_item.php') ? 'active' : ''; ?>">
+                <i class="fas fa-plus-circle"></i>
+                <span>Add Item</span>
+            </a>
+            <a href="planner.php" class="nav-item <?php echo ($current_page == 'planner.php') ? 'active' : ''; ?>">
+                <i class="fas fa-calendar-alt"></i>
+                <span>Calendar</span>
+            </a>
+            <a href="transaction.php" class="nav-item <?php echo ($current_page == 'transaction.php') ? 'active' : ''; ?>">
+                <i class="fas fa-receipt"></i>
+                <span>Transactions</span>
+            </a>
         </nav>
     </aside>

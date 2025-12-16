@@ -1,60 +1,29 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
 date_default_timezone_set('Asia/Manila');
 
-if (!isset($_SESSION["email"]) || empty($_SESSION["email"])) {
-    error_log("MyAccount.php: No user logged in, redirecting to login.php");
-    echo "<script>window.location.href='login.php';</script>";
-    exit;
-}
-
 include("../connections.php");
-include("access_control.php");
 
-$email = mysqli_real_escape_string($connections, $_SESSION["email"]);
-$query_info = mysqli_query($connections, "SELECT * FROM tbl_user WHERE email='$email'");
-if (!$query_info) {
-    error_log("MyAccount.php: Database error: " . mysqli_error($connections));
-    echo "<script>alert('Database error. Please try again later.'); window.location.href='login.php';</script>";
-    exit;
+// === CONFIGURATION ===
+// Change this to the correct user ID that owns the account/business
+$user_id = 16; // <-- UPDATE THIS IF YOUR MAIN USER HAS A DIFFERENT ID
+
+// Fetch user info
+$query_info = mysqli_query($connections, "SELECT * FROM tbl_user WHERE id_user='$user_id'");
+if (!$query_info || mysqli_num_rows($query_info) == 0) {
+    die("User not found. Please check the \$user_id in MyAccount.php.");
 }
 $my_info = mysqli_fetch_assoc($query_info);
-if (!$my_info) {
-    error_log("MyAccount.php: User not found for email: $email");
-    echo "<script>window.location.href='login.php';</script>";
-    exit;
-}
 
 // Get business information
-$business_query = mysqli_query($connections, "SELECT * FROM tbl_business WHERE id_user='{$my_info['id_user']}'");
+$business_query = mysqli_query($connections, "SELECT * FROM tbl_business WHERE id_user='$user_id'");
 $business_data = mysqli_fetch_assoc($business_query);
-$business_name = $business_data ? htmlspecialchars($business_data['establishment_name']) : 'SME'; // Define $business_name with fallback
+$business_name = $business_data ? htmlspecialchars($business_data['establishment_name']) : 'SME';
 
 $target_dir = "photo_folder/";
 $profileUploadErr = "";
-$subUploadErr = "";
 $first_nameErr = $middle_nameErr = $last_nameErr = $birthdayErr = $birth_placeErr = $cityErr = $barangayErr = $lot_streetErr = $prefixErr = $seven_digitErr = "";
 $passwordErr = $confirm_passwordErr = "";
 $notify = isset($_GET["notify"]) ? $_GET["notify"] : "";
-
-// Trial logic
-$is_trial_active = false;
-$seconds_left = 0;
-if (isset($my_info["trial_start_date"]) && $my_info["trial_start_date"]) {
-    try {
-        $trial_start = new DateTime($my_info["trial_start_date"]);
-        $current_date = new DateTime();
-        $trial_duration = 60; // 1 minute for testing
-        $seconds_since_trial = $current_date->getTimestamp() - $trial_start->getTimestamp();
-        $is_trial_active = $seconds_since_trial < $trial_duration;
-        $seconds_left = $trial_duration - $seconds_since_trial;
-    } catch (Exception $e) {
-        error_log("MyAccount.php: DateTime error for $email: " . $e->getMessage());
-    }
-}
 
 // Handle profile picture upload
 if (isset($_POST["btnUpload"])) {
@@ -82,11 +51,12 @@ if (isset($_POST["btnUpload"])) {
 
         if ($uploadOk == 1) {
             if (move_uploaded_file($_FILES["profile_pic"]["tmp_name"], $target_file)) {
-                $target_file = mysqli_real_escape_string($connections, $target_file);
-                $query = mysqli_query($connections, "UPDATE tbl_user SET img='$target_file' WHERE email='$email'");
+                $target_file_escaped = mysqli_real_escape_string($connections, $target_file);
+                $query = mysqli_query($connections, "UPDATE tbl_user SET img='$target_file_escaped' WHERE id_user='$user_id'");
                 if ($query) {
                     $notify = "Profile photo uploaded successfully!";
-                    echo "<script>window.location.href='MyAccount.php?notify=$notify';</script>";
+                    echo "<script>window.location.href='MyAccount.php?notify=" . urlencode($notify) . "';</script>";
+                    exit;
                 } else {
                     $profileUploadErr = "Database error: " . mysqli_error($connections);
                 }
@@ -135,11 +105,12 @@ if (isset($_POST["btnUpdate"])) {
             lot_street='$lot_street',
             prefix='$prefix',
             seven_digit='$seven_digit'
-            WHERE email='$email'");
+            WHERE id_user='$user_id'");
 
         if ($update_query) {
             $notify = "Profile updated successfully!";
-            echo "<script>window.location.href='MyAccount.php?notify=$notify';</script>";
+            echo "<script>window.location.href='MyAccount.php?notify=" . urlencode($notify) . "';</script>";
+            exit;
         } else {
             $notify = "Error updating profile: " . mysqli_error($connections);
         }
@@ -165,60 +136,13 @@ if (isset($_POST["btnResetPassword"])) {
 
     if (empty($passwordErr) && empty($confirm_passwordErr)) {
         $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-        $update_query = mysqli_query($connections, "UPDATE tbl_user SET password='$hashed_password' WHERE email='$email'");
+        $update_query = mysqli_query($connections, "UPDATE tbl_user SET password='$hashed_password' WHERE id_user='$user_id'");
         if ($update_query) {
             $notify = "Password reset successfully!";
-            echo "<script>window.location.href='MyAccount.php?notify=$notify';</script>";
+            echo "<script>window.location.href='MyAccount.php?notify=" . urlencode($notify) . "';</script>";
+            exit;
         } else {
             $notify = "Error resetting password: " . mysqli_error($connections);
-        }
-    }
-}
-
-// Handle subscription proof upload
-if (isset($_POST["btnUploadProof"])) {
-    $subscription_plan = $_POST["subscription_plan"] ?? '';
-    if (empty($subscription_plan) || !in_array($subscription_plan, ['A', 'B', 'C'])) {
-        $subUploadErr = "Please select a valid subscription plan.";
-    } elseif (!isset($_FILES["subscription_proof"]) || $_FILES["subscription_proof"]["error"] != 0) {
-        $subUploadErr = "Please upload a valid file.";
-    } else {
-        $allowed_types = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
-        $max_size = 5 * 1024 * 1024;
-        $file_type = $_FILES["subscription_proof"]["type"];
-        $file_size = $_FILES["subscription_proof"]["size"];
-        $upload_dir = "subscription_proofs/";
-
-        if (!is_dir($upload_dir)) {
-            mkdir($upload_dir, 0755, true);
-        }
-
-        if (!is_writable($upload_dir)) {
-            $subUploadErr = "Upload directory is not writable.";
-            error_log("MyAccount.php: Directory not writable: $upload_dir");
-        } else {
-            if (!in_array($file_type, $allowed_types)) {
-                $subUploadErr = "Only JPEG, PNG, or PDF files are allowed.";
-            } elseif ($file_size > $max_size) {
-                $subUploadErr = "File size exceeds 5MB limit.";
-            } else {
-                $file_ext = strtolower(pathinfo($_FILES["subscription_proof"]["name"], PATHINFO_EXTENSION));
-                $new_file_name = $my_info['id_user'] . "_subscription_proof_" . time() . "." . $file_ext;
-                $target_file = $upload_dir . $new_file_name;
-                if (move_uploaded_file($_FILES["subscription_proof"]["tmp_name"], $target_file)) {
-                    $query = "UPDATE tbl_user SET subscription_proof='$new_file_name', requested_plan='$subscription_plan', subscription_approved=0 WHERE email='$email'";
-                    if (mysqli_query($connections, $query)) {
-                        $notify = "Subscription proof uploaded successfully. Awaiting approval. You can still use your current plan features.";
-                        echo "<script>window.location.href='MyAccount.php?notify=" . urlencode($notify) . "';</script>";
-                    } else {
-                        $subUploadErr = "Database error: " . mysqli_error($connections);
-                        error_log("MyAccount.php: Error saving proof for $email: " . mysqli_error($connections));
-                    }
-                } else {
-                    $subUploadErr = "Error moving uploaded file.";
-                    error_log("MyAccount.php: Failed to move file to: $target_file");
-                }
-            }
         }
     }
 }
@@ -233,30 +157,7 @@ if (isset($_POST["btnUploadProof"])) {
     <link rel="stylesheet" href="user-dashboard.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        .plan-option {
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        .plan-option:hover {
-            background-color: #f0f0f0;
-        }
-        .plan-option input[type="radio"] {
-            display: none;
-        }
-        .plan-option.plan-selected {
-            background-color: #e6f3ff;
-            border: 2px solid #007bff;
-        }
-        .plan-option input[type="radio"]:checked + .plan-info {
-            background-color: #e6f3ff;
-            border: 2px solid #007bff;
-            border-radius: 5px;
-            padding: 10px;
-        }
-        .error-message {
-            color: red;
-            font-size: 0.9em;
-        }
+        .error-message { color: red; font-size: 0.9em; }
     </style>
 </head>
 <body>
@@ -272,17 +173,12 @@ if (isset($_POST["btnUploadProof"])) {
                     <i class="fas fa-user-circle"></i>
                     <span class="user-name"><?php echo htmlspecialchars($my_info['first_name'] . ' ' . $my_info['last_name']); ?></span>
                 </div>
-                <a href="../logout.php" class="logout-btn">
-                    <i class="fas fa-sign-out-alt"></i>
-                    Logout
-                </a>
+                <!-- Logout removed - standalone system -->
             </div>
         </div>
     </nav>
 
-    <!-- Dashboard Container -->
     <div class="dashboard-container">
-        <!-- Sidebar -->
         <aside class="sidebar">
             <div class="sidebar-header">
                 <h3><i class="fas fa-tachometer-alt"></i> Menu</h3>
@@ -308,24 +204,18 @@ if (isset($_POST["btnUploadProof"])) {
                     <i class="fas fa-plus-circle"></i>
                     <span>Add Item</span>
                 </a>
-                <?php if ($is_trial_active || ($my_info['subscription_approved'] && in_array($my_info['subscription_plan'], ['B', 'C']))): ?>
                 <a href="planner.php" class="nav-item <?php echo basename($_SERVER['PHP_SELF']) == 'planner.php' ? 'active' : ''; ?>">
                     <i class="fas fa-calendar-alt"></i>
                     <span>Calendar</span>
                 </a>
-                <?php endif; ?>
-                <?php if ($is_trial_active || ($my_info['subscription_approved'] && $my_info['subscription_plan'] == 'C')): ?>
                 <a href="transaction.php" class="nav-item <?php echo basename($_SERVER['PHP_SELF']) == 'transaction.php' ? 'active' : ''; ?>">
                     <i class="fas fa-receipt"></i>
                     <span>Transactions</span>
                 </a>
-                <?php endif; ?>
             </nav>
         </aside>
 
-        <!-- Main Content -->
         <main class="main-content">
-            <!-- Page Header -->
             <div class="page-header">
                 <div class="page-title">
                     <h1><i class="fas fa-user"></i> My Account</h1>
@@ -339,7 +229,6 @@ if (isset($_POST["btnUploadProof"])) {
                 <?php endif; ?>
             </div>
 
-            <!-- Account Content -->
             <div class="account-grid">
                 <!-- Profile Picture Section -->
                 <div class="profile-section">
@@ -349,7 +238,7 @@ if (isset($_POST["btnUploadProof"])) {
                         </div>
                         <div class="profile-content">
                             <div class="current-photo">
-                                <?php if ($my_info['img']): ?>
+                                <?php if (!empty($my_info['img'])): ?>
                                     <img src="<?php echo htmlspecialchars($my_info['img']); ?>" alt="Profile Picture" class="profile-img">
                                 <?php else: ?>
                                     <div class="no-photo">
@@ -508,52 +397,21 @@ if (isset($_POST["btnUploadProof"])) {
                                 <span><?php echo htmlspecialchars($my_info['email']); ?></span>
                             </div>
                             <div class="detail-item">
-                                <label>Account Type</label>
-                                <span class="account-type">
-                                    <i class="fas fa-user"></i>
-                                    Business User
+                                <label>Account Status</label>
+                                <span class="account-type text-success">
+                                    <i class="fas fa-check-circle"></i>
+                                    <strong>FREE FOREVER - FULL ACCESS</strong>
                                 </span>
                             </div>
                             <div class="detail-item">
                                 <label>Member Since</label>
-                                <span><?php echo date('F Y', strtotime($my_info['trial_start_date'] ?? 'now')); ?></span>
-                            </div>
-                            <div class="detail-item">
-                                <label>Subscription Status</label>
-                                <span>
-                                    <?php
-                                    if ($is_trial_active) {
-                                        $days_left = floor($seconds_left / 60);
-                                        echo "Free Trial (" . ($days_left > 0 ? "$days_left minutes left" : "expires soon") . ")";
-                                    } elseif ($my_info['subscription_approved']) {
-                                        echo "Subscribed to Plan " . htmlspecialchars($my_info['subscription_plan']);
-                                    } elseif ($my_info['subscription_proof']) {
-                                        echo "Pending Approval for Plan " . htmlspecialchars($my_info['requested_plan']);
-                                    } else {
-                                        echo "No Active Subscription";
-                                    }
-                                    ?>
-                                </span>
+                                <span><?php echo date('F Y', strtotime($my_info['date_registered'] ?? 'now')); ?></span>
                             </div>
                             <div class="detail-item">
                                 <label>Available Features</label>
-                                <span>
-                                    <?php
-                                    if ($is_trial_active || ($my_info['subscription_approved'] && $my_info['subscription_plan'] == 'C')) {
-                                        echo "All Features: View Stock, Adjust Stock, Add/Edit/Delete Items, Calendar, Transactions";
-                                    } elseif ($my_info['subscription_approved'] && $my_info['subscription_plan'] == 'B') {
-                                        echo "Plan B: View Stock, Adjust Stock, Add/Edit/Delete Items, Calendar";
-                                    } elseif ($my_info['subscription_approved'] && $my_info['subscription_plan'] == 'A') {
-                                        echo "Plan A: View Stock, Adjust Stock, Add/Edit/Delete Items";
-                                    } elseif ($my_info['subscription_proof'] && !$my_info['subscription_approved']) {
-                                        echo "Current Plan (" . htmlspecialchars($my_info['subscription_plan']) . "): " . 
-                                             ($my_info['subscription_plan'] == 'A' ? "View Stock, Adjust Stock, Add/Edit/Delete Items" : 
-                                              ($my_info['subscription_plan'] == 'B' ? "View Stock, Adjust Stock, Add/Edit/Delete Items, Calendar" : ""));
-                                    } else {
-                                        echo "No Access (Subscribe to unlock features)";
-                                    }
-                                    ?>
-                                </span>
+                                <span class="text-success"><strong>All features permanently unlocked:</strong><br>
+                                • View Stock • Adjust Stock • Add/Edit/Delete Items<br>
+                                • Calendar Planner • Full Transaction & Cashier System</span>
                             </div>
                         </div>
                     </div>
@@ -603,96 +461,6 @@ if (isset($_POST["btnUploadProof"])) {
                         </div>
                     </div>
                 </div>
-
-                <!-- Upgrade Subscription -->
-                <div class="subscription-section">
-                    <div class="subscription-card">
-                        <div class="subscription-header">
-                            <h3><i class="fas fa-star"></i> Upgrade Subscription</h3>
-                        </div>
-                        <div class="subscription-content">
-                            <?php 
-                            $subscription_approved = isset($my_info['subscription_approved']) ? $my_info['subscription_approved'] : 0;
-                            $subscription_plan = isset($my_info['subscription_plan']) ? $my_info['subscription_plan'] : '';
-                            ?>
-                            <?php if ($subscription_approved && $subscription_plan == 'C' && !$is_trial_active): ?>
-                                <p>You are already subscribed to the highest plan (Plan C).</p>
-                            <?php else: ?>
-                                <form method="POST" enctype="multipart/form-data" class="subscription-form">
-                                    <div class="plan-options">
-                                        <?php if (!$subscription_approved || $is_trial_active || $subscription_plan == 'A'): ?>
-                                        <label class="plan-option <?php echo $subscription_plan == 'A' ? 'plan-selected' : ''; ?>">
-                                            <input type="radio" name="subscription_plan" value="A" <?php echo $subscription_plan == 'A' && !$is_trial_active ? 'checked' : ''; ?> required>
-                                            <div class="plan-info">
-                                                <div class="plan-title">Plan A</div>
-                                                <div class="plan-desc">Basic Inventory</div>
-                                                <div class="plan-price">₱200</div>
-                                            </div>
-                                        </label>
-                                        <label class="plan-option <?php echo $subscription_plan == 'B' ? 'plan-selected' : ''; ?>">
-                                            <input type="radio" name="subscription_plan" value="B" <?php echo $subscription_plan == 'B' && !$is_trial_active ? 'checked' : ''; ?> required>
-                                            <div class="plan-info">
-                                                <div class="plan-title">Plan B</div>
-                                                <div class="plan-desc">Inventory + Calendar</div>
-                                                <div class="plan-price">₱250</div>
-                                            </div>
-                                        </label>
-                                        <label class="plan-option <?php echo $subscription_plan == 'C' ? 'plan-selected' : ''; ?>">
-                                            <input type="radio" name="subscription_plan" value="C" <?php echo $subscription_plan == 'C' && !$is_trial_active ? 'checked' : ''; ?> required>
-                                            <div class="plan-info">
-                                                <div class="plan-title">Plan C</div>
-                                                <div class="plan-desc">Inventory + Calendar + Transactions</div>
-                                                <div class="plan-price">₱350</div>
-                                            </div>
-                                        </label>
-                                        <?php elseif ($subscription_plan == 'B'): ?>
-                                        <label class="plan-option <?php echo $subscription_plan == 'B' ? 'plan-selected' : ''; ?>">
-                                            <input type="radio" name="subscription_plan" value="B" <?php echo $subscription_plan == 'B' ? 'checked' : ''; ?> required>
-                                            <div class="plan-info">
-                                                <div class="plan-title">Plan B</div>
-                                                <div class="plan-desc">Inventory + Calendar</div>
-                                                <div class="plan-price">₱250</div>
-                                            </div>
-                                        </label>
-                                        <label class="plan-option <?php echo $subscription_plan == 'C' ? 'plan-selected' : ''; ?>">
-                                            <input type="radio" name="subscription_plan" value="C" <?php echo $subscription_plan == 'C' ? 'checked' : ''; ?> required>
-                                            <div class="plan-info">
-                                                <div class="plan-title">Plan C</div>
-                                                <div class="plan-desc">Inventory + Calendar + Transactions</div>
-                                                <div class="plan-price">₱300</div>
-                                            </div>
-                                        </label>
-                                        <?php endif; ?>
-                                    </div>
-                                    <?php if ($is_trial_active): ?>
-                                        <p class="helper-text">You are currently on a free trial. Select a plan to subscribe after the trial ends.</p>
-                                    <?php elseif ($my_info['subscription_proof'] && !$subscription_approved): ?>
-                                        <p class="helper-text">Your upgrade to Plan <?php echo htmlspecialchars($my_info['requested_plan']); ?> is pending approval. You can still use your current plan (Plan <?php echo htmlspecialchars($my_info['subscription_plan']); ?>).</p>
-                                    <?php endif; ?>
-                                    <div class="form-grid" style="margin-top:18px">
-                                        <div class="form-group">
-                                            <label class="form-label">Upload Proof of Payment</label>
-                                            <div class="file-input-wrapper">
-                                                <input type="file" id="subscription_proof" name="subscription_proof" accept=".jpg,.jpeg,.png,.pdf" required>
-                                                <label for="subscription_proof" class="subscription-file-label">
-                                                    <i class="fas fa-cloud-upload-alt"></i>
-                                                    <span class="file-name">Choose file</span>
-                                                </label>
-                                            </div>
-                                            <span class="error-message"><?php echo htmlspecialchars($subUploadErr); ?></span>
-                                        </div>
-                                    </div>
-                                    <div class="form-actions">
-                                        <button type="submit" name="btnUploadProof" class="btn-primary">
-                                            <i class="fas fa-upload"></i>
-                                            Upload Proof
-                                        </button>
-                                    </div>
-                                </form>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                </div>
             </div>
         </main>
     </div>
@@ -711,16 +479,6 @@ if (isset($_POST["btnUploadProof"])) {
                         label.classList.add('file-selected');
                     }
                 }
-            });
-        }
-
-        // Subscription file label
-        const subInput = document.getElementById('subscription_proof');
-        if (subInput) {
-            subInput.addEventListener('change', function(e) {
-                const file = e.target.files[0];
-                const wrapper = document.querySelector('.subscription-file-label .file-name');
-                if (file && wrapper) wrapper.textContent = file.name;
             });
         }
 
@@ -774,18 +532,6 @@ if (isset($_POST["btnUploadProof"])) {
                 if (!isValid) {
                     e.preventDefault();
                     alert('Please fill in all required fields');
-                }
-            });
-        });
-
-        // Plan selection enhancement
-        document.querySelectorAll('.plan-option').forEach(option => {
-            option.addEventListener('click', function() {
-                const radio = this.querySelector('input[type="radio"]');
-                if (radio) {
-                    radio.checked = true;
-                    document.querySelectorAll('.plan-option').forEach(opt => opt.classList.remove('plan-selected'));
-                    this.classList.add('plan-selected');
                 }
             });
         });

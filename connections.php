@@ -1,10 +1,9 @@
 <?php
-$connections = mysqli_connect("mysql.hostinger.com", "u679323211_sme", "Joshcumpas@1", "u679323211_sme"); 
+$connections = mysqli_connect("localhost", "root", "", "inventory"); 
 if (mysqli_connect_errno()){
     echo "Failed to connect to MySQL:" . mysqli_connect_error();
 } 
 ?>
-
 
 <style>
     .btn-primary{

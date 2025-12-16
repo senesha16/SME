@@ -1,49 +1,22 @@
 <?php
-// Line 1
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+// Standalone Dashboard - No login required
 date_default_timezone_set('Asia/Manila');
 
-if (!isset($_SESSION["email"]) || empty($_SESSION["email"])) {
-    error_log("index.php: No user logged in, redirecting to login.php");
-    echo "<script>window.location.href='login.php';</script>";
-    exit;
-}
-
 include("../connections.php");
-include("access_control.php");
 
-$email = mysqli_real_escape_string($connections, $_SESSION["email"]);
-$query_info = mysqli_query($connections, "SELECT id_user, first_name, last_name, subscription_approved, subscription_plan, trial_start_date, account_type FROM tbl_user WHERE email='$email'");
-if ($query_info === false) {
-    error_log("index.php: Query failed: " . mysqli_error($connections));
-    echo "<script>alert('Database error. Please try again later.'); window.location.href='login.php';</script>";
-    exit;
-}
-$my_info = mysqli_fetch_assoc($query_info);
-if (!$my_info) {
-    error_log("index.php: User not found for email: $email");
-    echo "<script>alert('User not found.'); window.location.href='login.php';</script>";
-    exit;
-}
-$user_id = $my_info["id_user"];
-$user_name = $my_info["first_name"] . ' ' . $my_info["last_name"];
-$subscription_approved = $my_info["subscription_approved"];
-$subscription_plan = $my_info["subscription_plan"];
-$account_type = $my_info["account_type"];
-$is_trial_active = false;
+// === CONFIGURATION ===
+// Change this to the correct user ID that owns the business/inventory
+$user_id = 16; // <-- UPDATE THIS IF NEEDED
 
-if ($my_info["trial_start_date"]) {
-    try {
-        $trial_start = new DateTime($my_info["trial_start_date"]);
-        $current_date = new DateTime();
-        $trial_duration = 60; // 1 minute for testing
-        $seconds_since_trial = $trial_start->diff($current_date)->s + ($trial_start->diff($current_date)->i * 60);
-        $is_trial_active = $seconds_since_trial <= $trial_duration;
-    } catch (Exception $e) {
-        error_log("index.php: DateTime error for $email: " . $e->getMessage());
-    }
+// Fetch user info (for display only - no authentication)
+$query_info = mysqli_query($connections, "SELECT first_name, last_name FROM tbl_user WHERE id_user='$user_id'");
+if ($query_info && mysqli_num_rows($query_info) > 0) {
+    $my_info = mysqli_fetch_assoc($query_info);
+    $user_name = $my_info["first_name"] . ' ' . $my_info["last_name"];
+    $first_name = $my_info["first_name"];
+} else {
+    $user_name = "User";
+    $first_name = "User";
 }
 
 // Get business information
@@ -53,69 +26,34 @@ $business_name = $business_data ? htmlspecialchars($business_data['establishment
 
 // Get item count
 $item_query = mysqli_query($connections, "SELECT COUNT(*) as item_count FROM tbl_item WHERE id_user='$user_id'");
-if ($item_query === false) {
-    error_log("index.php: Item count query failed for user_id $user_id: " . mysqli_error($connections));
-    $item_count = 0;
-} else {
-    $item_count = mysqli_fetch_assoc($item_query)['item_count'];
-}
+$item_count = ($item_query && mysqli_num_rows($item_query) > 0) ? mysqli_fetch_assoc($item_query)['item_count'] : 0;
 
 // Get transaction count
 $transaction_query = mysqli_query($connections, "SELECT COUNT(*) as transaction_count FROM tbl_purchase WHERE id_user='$user_id'");
-if ($transaction_query === false) {
-    error_log("index.php: Transaction count query failed for user_id $user_id: " . mysqli_error($connections));
-    $transaction_count = 0;
-} else {
-    $transaction_count = mysqli_fetch_assoc($transaction_query)['transaction_count'];
-}
+$transaction_count = ($transaction_query && mysqli_num_rows($transaction_query) > 0) ? mysqli_fetch_assoc($transaction_query)['transaction_count'] : 0;
 
-// Get almost expired items count (within 7 days, aligned with view_stock.php)
+// Get almost expired items count (within 7 days)
 $stmt = $connections->prepare("SELECT COUNT(*) as almost_expired_count FROM tbl_item WHERE id_user = ? AND expiration_date_item IS NOT NULL AND expiration_date_item > CURDATE() AND expiration_date_item <= DATE_ADD(CURDATE(), INTERVAL 7 DAY)");
-if ($stmt === false) {
-    error_log("index.php: Prepare failed for almost expired query for user_id $user_id: " . mysqli_error($connections));
-    $almost_expired_count = 0;
-} else {
+if ($stmt) {
     $stmt->bind_param("i", $user_id);
     $stmt->execute();
     $result = $stmt->get_result();
     $almost_expired_count = $result->fetch_assoc()['almost_expired_count'];
     $stmt->close();
+} else {
+    $almost_expired_count = 0;
 }
 
-// Get out of stock items count (based on view_stock.php logic)
+// Get out of stock items count
 $out_of_stock_query = mysqli_query($connections, "SELECT COUNT(*) as out_of_stock_count FROM tbl_item WHERE id_user='$user_id' AND quantity_item = 0");
-if ($out_of_stock_query === false) {
-    error_log("index.php: Out of stock query failed for user_id $user_id: " . mysqli_error($connections));
-    $out_of_stock_count = 0;
-} else {
-    $out_of_stock_count = mysqli_fetch_assoc($out_of_stock_query)['out_of_stock_count'];
-}
+$out_of_stock_count = ($out_of_stock_query && mysqli_num_rows($out_of_stock_query) > 0) ? mysqli_fetch_assoc($out_of_stock_query)['out_of_stock_count'] : 0;
 
-// Get pending deliveries count (to be delivered)
+// Get pending deliveries count
 $pending_delivery_query = mysqli_query($connections, "SELECT COUNT(*) as pending_delivery_count FROM tbl_delivery WHERE id_user='$user_id' AND status='pending'");
-if ($pending_delivery_query === false) {
-    error_log("index.php: Pending delivery query failed for user_id $user_id: " . mysqli_error($connections));
-    $pending_delivery_count = 0;
-} else {
-    $pending_delivery_count = mysqli_fetch_assoc($pending_delivery_query)['pending_delivery_count'];
-}
-
-// Get pending pickups count (assumed to be same as pending deliveries; adjust if separate logic exists)
-$pending_pickup_query = mysqli_query($connections, "SELECT COUNT(*) as pending_pickup_count FROM tbl_delivery WHERE id_user='$user_id' AND status='pending'");
-if ($pending_pickup_query === false) {
-    error_log("index.php: Pending pickup query failed for user_id $user_id: " . mysqli_error($connections));
-    $pending_pickup_count = 0;
-} else {
-    $pending_pickup_count = mysqli_fetch_assoc($pending_pickup_query)['pending_pickup_count'];
-}
+$pending_delivery_count = ($pending_delivery_query && mysqli_num_rows($pending_delivery_query) > 0) ? mysqli_fetch_assoc($pending_delivery_query)['pending_delivery_count'] : 0;
 
 // Get recent transactions
 $recent_query = mysqli_query($connections, "SELECT p.id_purchase, p.date_time FROM tbl_purchase p WHERE p.id_user='$user_id' ORDER BY p.date_time DESC LIMIT 5");
-if ($recent_query === false) {
-    error_log("index.php: Recent query failed for user_id $user_id: " . mysqli_error($connections));
-} else {
-    error_log("index.php: Recent query executed for user_id $user_id, rows: " . mysqli_num_rows($recent_query));
-}
 
 // Current page for active menu highlighting
 $current_page = basename($_SERVER['PHP_SELF']);
@@ -126,7 +64,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo $business_name; ?> Dashboard - <?php echo htmlspecialchars($user_name); ?></title>
+    <title><?php echo $business_name; ?> Dashboard</title>
     <link rel="stylesheet" href="user-dashboard.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
@@ -143,10 +81,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
                     <i class="fas fa-user-circle"></i>
                     <span class="user-name"><?php echo htmlspecialchars($user_name); ?></span>
                 </div>
-                <a href="../logout.php" class="logout-btn">
-                    <i class="fas fa-sign-out-alt"></i>
-                    Logout
-                </a>
+                <!-- Logout removed - system is now standalone -->
             </div>
         </div>
     </nav>
@@ -167,38 +102,26 @@ $current_page = basename($_SERVER['PHP_SELF']);
                     <i class="fas fa-user"></i>
                     <span>My Account</span>
                 </a>
-                <?php if ($is_trial_active || ($subscription_approved && in_array($subscription_plan, ['A', 'B', 'C']))): ?>
-                    <a href="view_stock.php" class="nav-item <?php echo ($current_page == 'view_stock.php') ? 'active' : ''; ?>">
-                        <i class="fas fa-boxes"></i>
-                        <span>View Stock</span>
-                    </a>
-                    <a href="adjust_stock.php" class="nav-item <?php echo ($current_page == 'adjust_stock.php') ? 'active' : ''; ?>">
-                        <i class="fas fa-edit"></i>
-                        <span>Adjust Stock</span>
-                    </a>
-                    <a href="add_item.php" class="nav-item <?php echo ($current_page == 'add_item.php') ? 'active' : ''; ?>">
-                        <i class="fas fa-plus-circle"></i>
-                        <span>Add Item</span>
-                    </a>
-                <?php endif; ?>
-                <?php if ($is_trial_active || ($subscription_approved && in_array($subscription_plan, ['B', 'C']))): ?>
-                    <a href="planner.php" class="nav-item <?php echo ($current_page == 'planner.php') ? 'active' : ''; ?>">
-                        <i class="fas fa-calendar-alt"></i>
-                        <span>Calendar</span>
-                    </a>
-                <?php endif; ?>
-                <?php if ($is_trial_active || ($subscription_approved && $subscription_plan == 'C')): ?>
-                    <a href="transaction.php" class="nav-item <?php echo ($current_page == 'transaction.php') ? 'active' : ''; ?>">
-                        <i class="fas fa-receipt"></i>
-                        <span>Transactions</span>
-                    </a>
-                <?php endif; ?>
-                <?php if ($account_type == '1'): ?>
-                    <a href="check_subscription.php" class="nav-item <?php echo ($current_page == 'check_subscription.php') ? 'active' : ''; ?>">
-                        <i class="fas fa-cogs"></i>
-                        <span>Manage Subscriptions</span>
-                    </a>
-                <?php endif; ?>
+                <a href="view_stocks.php" class="nav-item <?php echo ($current_page == 'view_stocks.php') ? 'active' : ''; ?>">
+                    <i class="fas fa-boxes"></i>
+                    <span>View Stock</span>
+                </a>
+                <a href="adjust_stocks.php" class="nav-item <?php echo ($current_page == 'adjust_stocks.php') ? 'active' : ''; ?>">
+                    <i class="fas fa-edit"></i>
+                    <span>Adjust Stock</span>
+                </a>
+                <a href="add_item.php" class="nav-item <?php echo ($current_page == 'add_item.php') ? 'active' : ''; ?>">
+                    <i class="fas fa-plus-circle"></i>
+                    <span>Add Item</span>
+                </a>
+                <a href="planner.php" class="nav-item <?php echo ($current_page == 'planner.php') ? 'active' : ''; ?>">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>Calendar</span>
+                </a>
+                <a href="transaction.php" class="nav-item <?php echo ($current_page == 'transaction.php') ? 'active' : ''; ?>">
+                    <i class="fas fa-receipt"></i>
+                    <span>Transactions</span>
+                </a>
             </nav>
         </aside>
 
@@ -208,7 +131,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
             <section class="welcome-section">
                 <div class="welcome-card">
                     <div class="welcome-content">
-                        <h1>Welcome back, <?php echo htmlspecialchars($my_info['first_name']); ?>! 👋</h1>
+                        <h1>Welcome back, <?php echo htmlspecialchars($first_name); ?>! </h1>
                         <p class="welcome-text">Here's what's happening with your business today</p>
                         <?php if($business_data): ?>
                             <div class="business-info">
@@ -325,61 +248,57 @@ $current_page = basename($_SERVER['PHP_SELF']);
             <section class="actions-section">
                 <h2><i class="fas fa-lightning-bolt"></i> Quick Actions</h2>
                 <div class="actions-grid">
-                    <?php if ($is_trial_active || ($subscription_approved && in_array($subscription_plan, ['A', 'B', 'C']))): ?>
-                        <a href="add_item.php" class="action-card">
-                            <div class="action-icon">
-                                <i class="fas fa-plus-circle"></i>
-                            </div>
-                            <div class="action-content">
-                                <h3>Add New Item</h3>
-                                <p>Add products to your inventory</p>
-                            </div>
-                            <div class="action-arrow">
-                                <i class="fas fa-arrow-right"></i>
-                            </div>
-                        </a>
+                    <a href="add_item.php" class="action-card">
+                        <div class="action-icon">
+                            <i class="fas fa-plus-circle"></i>
+                        </div>
+                        <div class="action-content">
+                            <h3>Add New Item</h3>
+                            <p>Add products to your inventory</p>
+                        </div>
+                        <div class="action-arrow">
+                            <i class="fas fa-arrow-right"></i>
+                        </div>
+                    </a>
 
-                        <a href="view_stock.php" class="action-card">
-                            <div class="action-icon">
-                                <i class="fas fa-eye"></i>
-                            </div>
-                            <div class="action-content">
-                                <h3>View Stock</h3>
-                                <p>Check your current inventory</p>
-                            </div>
-                            <div class="action-arrow">
-                                <i class="fas fa-arrow-right"></i>
-                            </div>
-                        </a>
-                    <?php endif; ?>
-                    <?php if ($is_trial_active || ($subscription_approved && $subscription_plan == 'C')): ?>
-                        <a href="transaction.php" class="action-card">
-                            <div class="action-icon">
-                                <i class="fas fa-receipt"></i>
-                            </div>
-                            <div class="action-content">
-                                <h3>New Transaction</h3>
-                                <p>Record a new sale or purchase</p>
-                            </div>
-                            <div class="action-arrow">
-                                <i class="fas fa-arrow-right"></i>
-                            </div>
-                        </a>
-                    <?php endif; ?>
-                    <?php if ($is_trial_active || ($subscription_approved && in_array($subscription_plan, ['B', 'C']))): ?>
-                        <a href="planner.php" class="action-card">
-                            <div class="action-icon">
-                                <i class="fas fa-calendar-plus"></i>
-                            </div>
-                            <div class="action-content">
-                                <h3>Schedule Event</h3>
-                                <p>Plan your business activities</p>
-                            </div>
-                            <div class="action-arrow">
-                                <i class="fas fa-arrow-right"></i>
-                            </div>
-                        </a>
-                    <?php endif; ?>
+                    <a href="view_stock.php" class="action-card">
+                        <div class="action-icon">
+                            <i class="fas fa-eye"></i>
+                        </div>
+                        <div class="action-content">
+                            <h3>View Stock</h3>
+                            <p>Check your current inventory</p>
+                        </div>
+                        <div class="action-arrow">
+                            <i class="fas fa-arrow-right"></i>
+                        </div>
+                    </a>
+
+                    <a href="transaction.php" class="action-card">
+                        <div class="action-icon">
+                            <i class="fas fa-receipt"></i>
+                        </div>
+                        <div class="action-content">
+                            <h3>New Transaction</h3>
+                            <p>Record a new sale or purchase</p>
+                        </div>
+                        <div class="action-arrow">
+                            <i class="fas fa-arrow-right"></i>
+                        </div>
+                    </a>
+
+                    <a href="planner.php" class="action-card">
+                        <div class="action-icon">
+                            <i class="fas fa-calendar-plus"></i>
+                        </div>
+                        <div class="action-content">
+                            <h3>Schedule Event</h3>
+                            <p>Plan your business activities</p>
+                        </div>
+                        <div class="action-arrow">
+                            <i class="fas fa-arrow-right"></i>
+                        </div>
+                    </a>
                 </div>
             </section>
 
@@ -387,29 +306,26 @@ $current_page = basename($_SERVER['PHP_SELF']);
             <section class="recent-section">
                 <div class="section-header">
                     <h2><i class="fas fa-clock"></i> Recent Activity</h2>
-                    <?php if ($is_trial_active || ($subscription_approved && $subscription_plan == 'C')): ?>
-                        <a href="transaction.php?mode=history" class="view-all-btn">View All</a>
-                         <a href="weekly_summary.php?mode=history" class="view-all-btn">summary report</a>
-                    <?php endif; ?>
+                    <a href="transaction.php?mode=history" class="view-all-btn">View All</a>
+                    <a href="weekly_summary.php?mode=history" class="view-all-btn">Summary Report</a>
                 </div>
                 <div class="activity-card">
                     <div class="activity-list">
                         <?php
                         if ($recent_query && mysqli_num_rows($recent_query) > 0):
-                            $activity_number = $transaction_count; // Start from total transactions
-                            mysqli_data_seek($recent_query, 0); // Reset query pointer
+                            $activity_number = $transaction_count;
+                            mysqli_data_seek($recent_query, 0);
                             while ($activity = mysqli_fetch_assoc($recent_query)):
                                 if ($activity && isset($activity['id_purchase'], $activity['date_time'])):
                                     $stmt = $connections->prepare("SELECT name_item FROM tbl_item WHERE id_item = (SELECT id_item FROM tbl_purchase WHERE id_purchase = ? LIMIT 1)");
-                                    if ($stmt === false) {
-                                        error_log("index.php: Prepare failed for item name query for id_purchase {$activity['id_purchase']}: " . mysqli_error($connections));
-                                        $item_name = 'Unknown Item';
-                                    } else {
+                                    if ($stmt) {
                                         $stmt->bind_param("i", $activity['id_purchase']);
                                         $stmt->execute();
                                         $item_result = $stmt->get_result();
                                         $item_name = $item_result->num_rows > 0 && ($item_row = $item_result->fetch_assoc()) ? $item_row['name_item'] : 'Unknown Item';
                                         $stmt->close();
+                                    } else {
+                                        $item_name = 'Unknown Item';
                                     }
                                     $activity_date = !empty($activity['date_time']) && strtotime($activity['date_time']) !== false
                                         ? date('Y-m-d', strtotime($activity['date_time']))

@@ -1,52 +1,15 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
 date_default_timezone_set('Asia/Manila');
-include("nav.php"); // Adjusted to match your project structure; change to "../nav.php" if needed
-include("check_subscription.php");
-include("access_control.php");
+include("nav.php");
 include("../connections.php");
 
-if (!isset($_SESSION["email"]) || empty($_SESSION["email"])) {
-    error_log("view_stock.php: No user logged in, redirecting to login.php");
-    echo "<script>window.location.href='login.php';</script>";
-    exit;
-}
-
-$email = mysqli_real_escape_string($connections, $_SESSION["email"]);
-$query_info = mysqli_query($connections, "SELECT id_user, first_name, subscription_approved, subscription_plan FROM tbl_user WHERE email='$email'");
-if (!$query_info) {
-    error_log("view_stock.php: Database error: " . mysqli_error($connections));
-    echo "<script>alert('Database error: " . mysqli_error($connections) . "'); window.location.href='login.php';</script>";
-    exit;
-}
-$my_info = mysqli_fetch_assoc($query_info);
-if (!$my_info) {
-    error_log("view_stock.php: User not found for email: $email");
-    echo "<script>window.location.href='login.php';</script>";
-    exit;
-}
-$user_id = $my_info["id_user"];
-$full_name = $my_info["first_name"];
-$subscription_approved = $my_info["subscription_approved"];
-$subscription_plan = isset($_SESSION['effective_plan']) ? $_SESSION['effective_plan'] : $my_info["subscription_plan"];
-
-// Restrict access based on feature and plan
-$required_plan = ['A', 'B', 'C'];
-if (!$subscription_approved && !isset($_SESSION['effective_plan'])) {
-    error_log("view_stock.php: Access denied for $email, trial expired or no subscription");
-    echo "<script>alert('Access denied. Your trial has expired. Please subscribe.'); window.location.href='Subscribe.php';</script>";
-    exit;
-} elseif ($subscription_approved && !in_array($subscription_plan, $required_plan)) {
-    error_log("view_stock.php: Access denied for $email, plan $subscription_plan not sufficient");
-    echo "<script>alert('Access denied. Please upgrade to Plan " . implode(' or ', $required_plan) . ".'); window.location.href='MyAccount.php';</script>";
-    exit;
-}
+// === CONFIGURATION ===
+// Change this to the correct user ID that owns the inventory
+$user_id = 16; // <-- UPDATE THIS IF NEEDED (same as other files)
 
 // Determine view mode and expiry filter
 $view_mode = isset($_GET["mode"]) ? $_GET["mode"] : "stock";
-$expiry_filter = isset($_GET["expiry_filter"]) ? $_GET["expiry_filter"] : "expiring_soon"; // Default to expiring soon
+$expiry_filter = isset($_GET["expiry_filter"]) ? $_GET["expiry_filter"] : "expiring_soon";
 $search = isset($_GET["search"]) ? trim($_GET["search"]) : "";
 $category_filter = isset($_GET["category"]) ? trim($_GET["category"]) : "";
 $items = [];
@@ -74,13 +37,12 @@ if ($view_mode == "selling") {
     $query .= " ORDER BY name_item ASC";
     $stmt = $connections->prepare($query);
     if ($stmt === false) {
-        error_log("view_stock.php: Prepare failed for selling query for user_id $user_id: " . mysqli_error($connections));
+        error_log("view_stock.php: Prepare failed for selling query: " . mysqli_error($connections));
         $items = [];
     } else {
         $stmt->bind_param($types, ...$params);
         $stmt->execute();
         $result = $stmt->get_result();
-        $items = [];
         while ($row = $result->fetch_assoc()) {
             $items[] = $row;
         }
@@ -90,52 +52,35 @@ if ($view_mode == "selling") {
     if ($expiry_filter == "expired") {
         $query = "SELECT * FROM tbl_item WHERE id_user=? AND expiration_date_item IS NOT NULL 
                   AND expiration_date_item <= CURDATE()";
-        $params = [$user_id];
-        $types = "i";
-        if (!empty($search)) {
-            $search = "%$search%";
-            $query .= " AND (name_item LIKE ? OR category_item LIKE ? OR brand_item LIKE ?)";
-            $params[] = $search;
-            $params[] = $search;
-            $params[] = $search;
-            $types .= "sss";
-        }
-        if (!empty($category_filter)) {
-            $query .= " AND category_item = ?";
-            $params[] = $category_filter;
-            $types .= "s";
-        }
-        $query .= " ORDER BY expiration_date_item DESC";
     } else {
         $query = "SELECT * FROM tbl_item WHERE id_user=? AND expiration_date_item IS NOT NULL 
                   AND expiration_date_item > CURDATE() 
                   AND expiration_date_item <= DATE_ADD(CURDATE(), INTERVAL 7 DAY)";
-        $params = [$user_id];
-        $types = "i";
-        if (!empty($search)) {
-            $search = "%$search%";
-            $query .= " AND (name_item LIKE ? OR category_item LIKE ? OR brand_item LIKE ?)";
-            $params[] = $search;
-            $params[] = $search;
-            $params[] = $search;
-            $types .= "sss";
-        }
-        if (!empty($category_filter)) {
-            $query .= " AND category_item = ?";
-            $params[] = $category_filter;
-            $types .= "s";
-        }
-        $query .= " ORDER BY expiration_date_item ASC";
     }
+    $params = [$user_id];
+    $types = "i";
+    if (!empty($search)) {
+        $search = "%$search%";
+        $query .= " AND (name_item LIKE ? OR category_item LIKE ? OR brand_item LIKE ?)";
+        $params[] = $search;
+        $params[] = $search;
+        $params[] = $search;
+        $types .= "sss";
+    }
+    if (!empty($category_filter)) {
+        $query .= " AND category_item = ?";
+        $params[] = $category_filter;
+        $types .= "s";
+    }
+    $query .= $expiry_filter == "expired" ? " ORDER BY expiration_date_item DESC" : " ORDER BY expiration_date_item ASC";
     $stmt = $connections->prepare($query);
     if ($stmt === false) {
-        error_log("view_stock.php: Prepare failed for expiry query ($expiry_filter) for user_id $user_id: " . mysqli_error($connections));
+        error_log("view_stock.php: Prepare failed for expiry query ($expiry_filter): " . mysqli_error($connections));
         $items = [];
     } else {
         $stmt->bind_param($types, ...$params);
         $stmt->execute();
         $result = $stmt->get_result();
-        $items = [];
         while ($row = $result->fetch_assoc()) {
             $items[] = $row;
         }
@@ -161,22 +106,22 @@ if ($view_mode == "selling") {
     $query .= " ORDER BY name_item ASC";
     $stmt = $connections->prepare($query);
     if ($stmt === false) {
-        error_log("view_stock.php: Prepare failed for out_of_stock query for user_id $user_id: " . mysqli_error($connections));
+        error_log("view_stock.php: Prepare failed for out_of_stock query: " . mysqli_error($connections));
         $items = [];
     } else {
         $stmt->bind_param($types, ...$params);
         $stmt->execute();
         $result = $stmt->get_result();
-        $items = [];
         while ($row = $result->fetch_assoc()) {
             $items[] = $row;
         }
         $stmt->close();
     }
 } else {
-    // All Stock mode: Fetch available, out-of-stock, and expired items separately
+    // Default: All Stock mode
     $items = [];
-    // Available products (in stock, non-expired)
+
+    // Available items
     $query_available = "SELECT * FROM tbl_item WHERE id_user=? AND quantity_item > 0 
                         AND (expiration_date_item IS NULL OR expiration_date_item > CURDATE())";
     $params = [$user_id];
@@ -196,9 +141,7 @@ if ($view_mode == "selling") {
     }
     $query_available .= " ORDER BY name_item ASC";
     $stmt = $connections->prepare($query_available);
-    if ($stmt === false) {
-        error_log("view_stock.php: Prepare failed for available query for user_id $user_id: " . mysqli_error($connections));
-    } else {
+    if ($stmt !== false) {
         $stmt->bind_param($types, ...$params);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -207,11 +150,13 @@ if ($view_mode == "selling") {
         }
         $stmt->close();
     }
-    // Add separator for out-of-stock if there are available items
+
+    // Separator for Out of Stock
     if (!empty($items)) {
         $items[] = ['is_separator' => true, 'label' => 'Out of Stock'];
     }
-    // Out of stock (all, including expired)
+
+    // Out of stock items
     $query_out_of_stock = "SELECT * FROM tbl_item WHERE id_user=? AND quantity_item = 0";
     $params = [$user_id];
     $types = "i";
@@ -230,9 +175,7 @@ if ($view_mode == "selling") {
     }
     $query_out_of_stock .= " ORDER BY name_item ASC";
     $stmt = $connections->prepare($query_out_of_stock);
-    if ($stmt === false) {
-        error_log("view_stock.php: Prepare failed for out_of_stock query for user_id $user_id: " . mysqli_error($connections));
-    } else {
+    if ($stmt !== false) {
         $stmt->bind_param($types, ...$params);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -241,11 +184,13 @@ if ($view_mode == "selling") {
         }
         $stmt->close();
     }
-    // Add separator for expired if there are any items so far
+
+    // Separator for Expired
     if (!empty($items)) {
         $items[] = ['is_separator' => true, 'label' => 'Expired'];
     }
-    // Expired items (in stock only)
+
+    // Expired items (in stock)
     $query_expired = "SELECT * FROM tbl_item WHERE id_user=? AND quantity_item > 0 
                       AND expiration_date_item IS NOT NULL AND expiration_date_item <= CURDATE()";
     $params = [$user_id];
@@ -265,9 +210,7 @@ if ($view_mode == "selling") {
     }
     $query_expired .= " ORDER BY name_item ASC";
     $stmt = $connections->prepare($query_expired);
-    if ($stmt === false) {
-        error_log("view_stock.php: Prepare failed for expired query for user_id $user_id: " . mysqli_error($connections));
-    } else {
+    if ($stmt !== false) {
         $stmt->bind_param($types, ...$params);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -293,10 +236,9 @@ while ($cat_row = mysqli_fetch_assoc($category_query)) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>View Stock - SME Dashboard</title>
     <link rel="stylesheet" href="user-stock.css">
-    <link rel="stylesheet" href="user-dashboard.css"> <!-- Added to match MyAccount.php -->
+    <link rel="stylesheet" href="user-dashboard.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        /* Minimal inline styles (to be moved to user-stock.css) */
         .page-header {
             background: linear-gradient(135deg, #E62727 0%, #c62d2d 100%);
             color: white;
@@ -420,25 +362,20 @@ while ($cat_row = mysqli_fetch_assoc($category_query)) {
         }
         .table-responsive {
             overflow-x: auto;
-            border-radius: 12px;     /* rounded container */
-            overflow: hidden;       /* ensure table corners are clipped */
+            border-radius: 12px;
+            overflow: hidden;
             box-shadow: 0 6px 18px rgba(16,24,40,0.04);
             border: 1px solid #eef4ff;
         }
         .stock-table {
             width: 100%;
-            border-collapse: separate; /* allow corner radii on cells */
-            border-spacing: 0;         /* remove spacing */
+            border-collapse: separate;
+            border-spacing: 0;
             margin: 0;
             background: #fff;
         }
-        /* round the top corners on the first/last header cells */
         .stock-table thead th:first-child { border-top-left-radius: 12px; }
         .stock-table thead th:last-child  { border-top-right-radius: 12px; }
-        /* round the bottom corners on the footer or last row cells */
-        .stock-table tfoot td:first-child { border-bottom-left-radius: 12px; }
-        .stock-table tfoot td:last-child  { border-bottom-right-radius: 12px; }
-        /* fallback if no tfoot: round last row cells */
         .stock-table tbody tr:last-child td:first-child { border-bottom-left-radius: 12px; }
         .stock-table tbody tr:last-child td:last-child  { border-bottom-right-radius: 12px; }
 
@@ -554,7 +491,6 @@ while ($cat_row = mysqli_fetch_assoc($category_query)) {
                 align-items: stretch;
             }
         }
-        /* Ensure main content is offset for sidebar */
         .main-content {
             margin-left: calc(var(--sidebar-width, 250px) + 24px);
             padding: 30px;
@@ -563,9 +499,7 @@ while ($cat_row = mysqli_fetch_assoc($category_query)) {
     </style>
 </head>
 <body>
-    <!-- Main Content -->
     <main class="main-content">
-        <!-- Page Header -->
         <div class="page-header">
             <div class="header-content">
                 <div class="header-text">
@@ -580,7 +514,6 @@ while ($cat_row = mysqli_fetch_assoc($category_query)) {
             </div>
         </div>
 
-        <!-- Notification -->
         <?php if (isset($_GET["notify"])): ?>
             <div class="notification">
                 <i class="fas fa-check-circle"></i>
@@ -588,7 +521,6 @@ while ($cat_row = mysqli_fetch_assoc($category_query)) {
             </div>
         <?php endif; ?>
 
-        <!-- Filter Tabs -->
         <div class="filter-tabs">
             <a href="?mode=stock" class="tab-btn <?php echo $view_mode == 'stock' ? 'active' : ''; ?>">
                 <i class="fas fa-warehouse"></i> All Stock
@@ -604,7 +536,6 @@ while ($cat_row = mysqli_fetch_assoc($category_query)) {
             </a>
         </div>
 
-        <!-- Expiry Filter Buttons (shown only in expiry mode) -->
         <?php if ($view_mode == "expiry"): ?>
             <div class="expiry-buttons">
                 <a href="?mode=expiry&expiry_filter=expiring_soon" class="expiry-btn <?php echo $expiry_filter == 'expiring_soon' ? 'active' : ''; ?>">
@@ -616,7 +547,6 @@ while ($cat_row = mysqli_fetch_assoc($category_query)) {
             </div>
         <?php endif; ?>
 
-        <!-- Search and Actions -->
         <div class="controls-section">
             <div class="search-container">
                 <form method="GET" action="" class="search-form">
@@ -643,7 +573,6 @@ while ($cat_row = mysqli_fetch_assoc($category_query)) {
             </div>
         </div>
 
-        <!-- Stock Table -->
         <div class="stock-container">
             <?php if (empty($items)): ?>
                 <div class="empty-state">
@@ -676,7 +605,6 @@ while ($cat_row = mysqli_fetch_assoc($category_query)) {
                                         <th colspan="11"><?php echo htmlspecialchars($item['label']); ?></th>
                                     </tr>
                                 <?php else:
-                                    // Determine selling price display
                                     $selling_price = "";
                                     if ($item["unit_item"] == "piece" || $item["unit_item"] == "sachet") {
                                         $selling_price = "₱" . number_format($item["selling_price_individual"], 2);
@@ -698,7 +626,6 @@ while ($cat_row = mysqli_fetch_assoc($category_query)) {
                                         $selling_price = "₱" . number_format($item["selling_price_item"], 2);
                                     }
 
-                                    // Check expiration status
                                     $expiry_class = "";
                                     $expiry_icon = "fas fa-calendar-check";
                                     if ($view_mode == "expiry" || ($item["expiration_date_item"] && $item["expiration_date_item"] <= date('Y-m-d'))) {
@@ -713,7 +640,6 @@ while ($cat_row = mysqli_fetch_assoc($category_query)) {
                                         }
                                     }
 
-                                    // Determine stock status
                                     $stock_class = "";
                                     if ($item["quantity_item"] == 0) {
                                         $stock_class = "out-of-stock";
@@ -753,7 +679,7 @@ while ($cat_row = mysqli_fetch_assoc($category_query)) {
                                     <td><?php echo htmlspecialchars($item["items_per_unit"]); ?></td>
                                     <td class="actions">
                                         <?php if ($view_mode != "selling"): ?>
-                                        <a href="add_item.php?edit=<?php echo htmlspecialchars($item["id_item"]); ?>" class="action-btn edit-btn" title="Edit Item">
+                                        <a href="update_item.php?edit=<?php echo htmlspecialchars($item["id_item"]); ?>" class="action-btn edit-btn" title="Edit Item">
                                             <i class="fas fa-edit"></i>
                                         </a>
                                         <a href="confirm_delete_item.php?delete=<?php echo htmlspecialchars($item["id_item"]); ?>" class="action-btn delete-btn" 
@@ -771,7 +697,6 @@ while ($cat_row = mysqli_fetch_assoc($category_query)) {
             <?php endif; ?>
         </div>
 
-        <!-- Notification (below table for consistency) -->
         <?php if (isset($_GET["notify"])): ?>
             <div class="notification success">
                 <i class="fas fa-check-circle"></i>
@@ -780,7 +705,6 @@ while ($cat_row = mysqli_fetch_assoc($category_query)) {
         <?php endif; ?>
     </main>
 
-    <!-- Sidebar-width measurement script: sets --sidebar-width so .main-content won't overlap -->
     <script>
         (function(){
             function updateSidebarWidth(){
