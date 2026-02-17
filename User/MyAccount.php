@@ -5,7 +5,7 @@ include("../connections.php");
 
 // === CONFIGURATION ===
 // Change this to the correct user ID that owns the account/business
-$user_id = 27; // <-- UPDATE THIS IF YOUR MAIN USER HAS A DIFFERENT ID
+$user_id = 50; // <-- UPDATE THIS IF YOUR MAIN USER HAS A DIFFERENT ID
 
 // Fetch user info
 $query_info = mysqli_query($connections, "SELECT * FROM tbl_user WHERE id_user='$user_id'");

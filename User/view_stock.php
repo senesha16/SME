@@ -5,7 +5,7 @@ include("../connections.php");
 
 // === CONFIGURATION ===
 // Change this to the correct user ID that owns the inventory
-$user_id = 27; // <-- UPDATE THIS IF NEEDED (same as other files)
+$user_id = 50; // <-- UPDATE THIS IF NEEDED (same as other files)
 
 // Determine view mode and expiry filter
 $view_mode = isset($_GET["mode"]) ? $_GET["mode"] : "stock";
