@@ -3,6 +3,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 date_default_timezone_set('Asia/Manila');
+include("csrf_helper.php");
 include("nav.php"); // Keep your nav include
 include("../connections.php");
 

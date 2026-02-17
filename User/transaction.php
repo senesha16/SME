@@ -1,6 +1,7 @@
 <?php
 date_default_timezone_set('Asia/Manila');
 include("nav.php");
+include("csrf_helper.php");
 
 if (!file_exists("../connections.php")) {
     die("<h3>Error: Database connection file not found.</h3>");

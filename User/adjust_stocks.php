@@ -1,6 +1,7 @@
 <?php
 date_default_timezone_set('Asia/Manila');
 include("nav.php");
+include("csrf_helper.php");
 include("../connections.php");
 
 // === FULLY STANDALONE MODE ===

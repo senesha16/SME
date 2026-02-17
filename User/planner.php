@@ -2,6 +2,7 @@
 date_default_timezone_set('Asia/Manila');
 include("nav.php");
 include("../connections.php");
+include("csrf_helper.php");
 
 // === CONFIGURATION ===
 // Change this to the correct user ID that owns the business/inventory

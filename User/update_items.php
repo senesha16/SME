@@ -1,6 +1,7 @@
 <?php
 include("nav.php");
 include("../connections.php");
+include("csrf_helper.php");
 
 // === CONFIGURATION ===
 // Change this to the correct user ID that owns the inventory

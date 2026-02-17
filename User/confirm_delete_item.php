@@ -1,5 +1,6 @@
 <?php
 include("nav.php");
+include("csrf_helper.php");
 include("../connections.php");
 
 // === FULLY STANDALONE MODE ===
