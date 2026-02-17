@@ -3,7 +3,7 @@ include("../connections.php");
 
 // === CONFIGURATION ===
 // Change this to the correct user ID that owns the inventory
-$user_id = 15; // <-- UPDATE THIS IF NEEDED (same as in index.php, MyAccount.php, etc.)
+$user_id = 27; // <-- UPDATE THIS IF NEEDED (same as in index.php, MyAccount.php, etc.)
 
 $term = isset($_GET['term']) ? trim($_GET['term']) : '';
 $term = mysqli_real_escape_string($connections, $term);
