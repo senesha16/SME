@@ -1,5 +1,4 @@
 <?php
-ob_start();
 header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'self'; form-action 'self'; upgrade-insecure-requests; base-uri 'self';");
 date_default_timezone_set('Asia/Manila');
 include("nav.php");
@@ -641,6 +640,6 @@ if ($selected_item_id && isset($items[$selected_item_id])) {
             });
         })();
     </script>
-    <?php ob_end_flush(); ?>
+    
 </body>
 </html>

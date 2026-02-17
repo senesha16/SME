@@ -1,5 +1,4 @@
 <?php
-ob_start();
 header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'self'; form-action 'self'; upgrade-insecure-requests; base-uri 'self';");
 date_default_timezone_set('Asia/Manila');
 
@@ -545,6 +544,6 @@ if (isset($_POST["btnResetPassword"])) {
             });
         });
     </script>
-    <?php ob_end_flush(); ?>
+    
 </body>
 </html>

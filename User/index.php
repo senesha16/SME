@@ -1,5 +1,4 @@
 <?php
-ob_start();
 header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'self'; form-action 'self'; upgrade-insecure-requests; base-uri 'self';");
 // Standalone Dashboard - No login required
 date_default_timezone_set('Asia/Manila');
@@ -382,6 +381,6 @@ $current_page = basename($_SERVER['PHP_SELF']);
             });
         });
     </script>
-    <?php ob_end_flush(); ?>
+    
 </body>
 </html>
