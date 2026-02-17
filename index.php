@@ -28,7 +28,7 @@
                     Simple, secure, and built for small businesses.
                 </p>
                 <div class="hero-buttons">
-                    <a href="user/index.php" class="btn btn-primary">Get Started</a>
+                    <a href="User/index.php" class="btn btn-primary">Get Started</a>
                     <!-- Sign In / Sign Out removed -->
                 </div>
             </div>
