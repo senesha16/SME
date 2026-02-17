@@ -1,4 +1,5 @@
 <?php
+ob_start();
 header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'self'; form-action 'self'; upgrade-insecure-requests; base-uri 'self';");
 date_default_timezone_set('Asia/Manila');
 include("nav.php");
@@ -574,5 +575,6 @@ if ($view_mode == "analytics") {
         .chart-wrapper{height:300px}
         @media (max-width:768px){.main-content{margin-left:0;padding:15px}.transaction-section{padding:20px;margin:15px}.form-group{min-width:100%}}
     </style>
+    <?php ob_end_flush(); ?>
 </body>
 </html>
