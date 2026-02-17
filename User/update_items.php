@@ -58,6 +58,7 @@ if ($sell_as_pack == 1 && $sell_as_sachet == 1) {
 }
 
 if (isset($_POST["btnUpdateItem"])) {
+    validate_csrf_token();
     // Validate inputs
     if (empty($_POST["name_item"])) {
         $name_itemErr = "Required!";

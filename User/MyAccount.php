@@ -28,6 +28,7 @@ $notify = isset($_GET["notify"]) ? $_GET["notify"] : "";
 
 // Handle profile picture upload
 if (isset($_POST["btnUpload"])) {
+    validate_csrf_token();
     if (isset($_FILES["profile_pic"]) && $_FILES["profile_pic"]["error"] == 0) {
         if (!is_dir($target_dir)) {
             mkdir($target_dir, 0755, true);
@@ -72,6 +73,7 @@ if (isset($_POST["btnUpload"])) {
 
 // Handle profile update
 if (isset($_POST["btnUpdate"])) {
+    validate_csrf_token();
     $first_name = mysqli_real_escape_string($connections, $_POST["first_name"] ?? '');
     $middle_name = mysqli_real_escape_string($connections, $_POST["middle_name"] ?? '');
     $last_name = mysqli_real_escape_string($connections, $_POST["last_name"] ?? '');
@@ -120,6 +122,7 @@ if (isset($_POST["btnUpdate"])) {
 
 // Handle password reset
 if (isset($_POST["btnResetPassword"])) {
+    validate_csrf_token();
     $password = $_POST["password"] ?? '';
     $confirm_password = $_POST["confirm_password"] ?? '';
 

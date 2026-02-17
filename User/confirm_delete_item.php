@@ -40,6 +40,7 @@ if (mysqli_num_rows($query) > 0) {
 
 // Handle confirmed deletion
 if (isset($_POST["btnConfirmDelete"])) {
+    validate_csrf_token();
     $id_item = mysqli_real_escape_string($connections, $_POST["id_item"]);
     
     // Delete the item (no id_user restriction — works on shared standalone inventory)

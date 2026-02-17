@@ -38,6 +38,7 @@ foreach ($cart as $item) {
 
 // Remove from cart
 if (isset($_POST["btnRemoveFromCart"])) {
+    validate_csrf_token();
     $id_item = intval($_POST["id_item"]);
     if (isset($cart[$id_item])) {
         unset($cart[$id_item]);
@@ -48,6 +49,7 @@ if (isset($_POST["btnRemoveFromCart"])) {
 
 if ($view_mode == "transaction") {
     if (isset($_POST["btnAddToCart"])) {
+        validate_csrf_token();
         $id_item = intval($_POST["id_item"]);
         $quantity = intval($_POST["quantity"]);
 
@@ -80,6 +82,7 @@ if ($view_mode == "transaction") {
 
     // Complete transaction
     if (isset($_POST["btnComplete"])) {
+        validate_csrf_token();
         if (empty($cart)) {
             echo "<script>alert('Cart is empty!');</script>";
         } else {

@@ -15,6 +15,7 @@ $full_name = $my_info["first_name"];
 
 // Handle adding delivery
 if (isset($_POST["btnAddDelivery"])) {
+    validate_csrf_token();
     error_log("POST data: " . print_r($_POST, true));
 
     $supplier_name = isset($_POST["supplier_name"]) ? mysqli_real_escape_string($connections, trim($_POST["supplier_name"])) : '';
@@ -83,6 +84,7 @@ if (isset($_POST["btnAddDelivery"])) {
 
 // Handle claim delivery
 if (isset($_POST["btnClaimDelivery"])) {
+    validate_csrf_token();
     $delivery_id = mysqli_real_escape_string($connections, $_POST["delivery_id"]);
     $stmt_claim = $connections->prepare("UPDATE tbl_delivery SET status='delivered' WHERE id_delivery=? AND id_user=? AND status='pending'");
     if ($stmt_claim !== false) {
@@ -98,6 +100,7 @@ if (isset($_POST["btnClaimDelivery"])) {
 
 // Handle cancel delivery
 if (isset($_POST["btnCancelDelivery"])) {
+    validate_csrf_token();
     $delivery_id = mysqli_real_escape_string($connections, $_POST["delivery_id"]);
     $stmt_cancel = $connections->prepare("UPDATE tbl_delivery SET status='canceled' WHERE id_delivery=? AND id_user=? AND status='pending'");
     if ($stmt_cancel !== false) {

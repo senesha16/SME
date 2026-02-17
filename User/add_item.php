@@ -53,6 +53,7 @@ if ($id_item) {
 }
 
 if (isset($_POST["btnAddItem"])) {
+    validate_csrf_token();
     $name_item = !empty($_POST["name_item"]) ? mysqli_real_escape_string($connections, $_POST["name_item"]) : "";
     $category_item = !empty($_POST["category_item"]) ? mysqli_real_escape_string($connections, $_POST["category_item"]) : "";
     $brand_item = !empty($_POST["brand_item"]) ? mysqli_real_escape_string($connections, $_POST["brand_item"]) : "";
