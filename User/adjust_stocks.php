@@ -5,7 +5,7 @@ include("../connections.php");
 
 // === FULLY STANDALONE MODE ===
 // No login required
-$user_id = 16; // Kirk's correct ID
+$user_id = 15; // Kirk's correct ID
 
 // Handle adjustment submission
 $actionErr = $quantityErr = "";

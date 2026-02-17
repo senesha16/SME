@@ -9,7 +9,7 @@ include("../connections.php");
 // === FULLY STANDALONE MODE ===
 // No login required
 // All items belong to the shared system inventory
-$user_id = 16; // Fixed ID for all new items (safe for your current DB structure)
+$user_id = 15; // Fixed ID for all new items (safe for your current DB structure)
 $full_name = "Cashier"; // Optional display name
 
 // Initialize form variables

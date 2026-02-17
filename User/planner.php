@@ -5,7 +5,7 @@ include("../connections.php");
 
 // === CONFIGURATION ===
 // Change this to the correct user ID that owns the business/inventory
-$user_id = 16; // <-- UPDATE THIS IF NEEDED
+$user_id = 15; // <-- UPDATE THIS IF NEEDED
 
 // Fetch basic user info (for potential future use)
 $query_info = mysqli_query($connections, "SELECT first_name FROM tbl_user WHERE id_user='$user_id'");
