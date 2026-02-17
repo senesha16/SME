@@ -16,7 +16,8 @@ $full_name = $my_info["first_name"];
 
 // Handle adding delivery
 if (isset($_POST["btnAddDelivery"])) {
-    validate_csrf_token();
+    validate_csrf_token();   // ← Added here
+
     error_log("POST data: " . print_r($_POST, true));
 
     $supplier_name = isset($_POST["supplier_name"]) ? mysqli_real_escape_string($connections, trim($_POST["supplier_name"])) : '';
@@ -85,7 +86,8 @@ if (isset($_POST["btnAddDelivery"])) {
 
 // Handle claim delivery
 if (isset($_POST["btnClaimDelivery"])) {
-    validate_csrf_token();
+    validate_csrf_token();   // ← Added here
+
     $delivery_id = mysqli_real_escape_string($connections, $_POST["delivery_id"]);
     $stmt_claim = $connections->prepare("UPDATE tbl_delivery SET status='delivered' WHERE id_delivery=? AND id_user=? AND status='pending'");
     if ($stmt_claim !== false) {
@@ -101,7 +103,8 @@ if (isset($_POST["btnClaimDelivery"])) {
 
 // Handle cancel delivery
 if (isset($_POST["btnCancelDelivery"])) {
-    validate_csrf_token();
+    validate_csrf_token();   // ← Added here
+
     $delivery_id = mysqli_real_escape_string($connections, $_POST["delivery_id"]);
     $stmt_cancel = $connections->prepare("UPDATE tbl_delivery SET status='canceled' WHERE id_delivery=? AND id_user=? AND status='pending'");
     if ($stmt_cancel !== false) {
@@ -255,14 +258,18 @@ $months = [
                                     }
                                     if ($delivery['status'] === 'pending') {
                                         echo "<br>";
-                                        echo "<form method='POST' action='planner.php?month=$month&year=$year' style='display:inline;'>
-                                                <input type='hidden' name='delivery_id' value='{$delivery['id_delivery']}'>
-                                                <input type='submit' name='btnClaimDelivery' value='Mark as Delivered' class='btn-claim'>
-                                              </form>";
-                                        echo "<form method='POST' action='planner.php?month=$month&year=$year' style='display:inline; margin-left:5px;'>
-                                                <input type='hidden' name='delivery_id' value='{$delivery['id_delivery']}'>
-                                                <input type='submit' name='btnCancelDelivery' value='Cancel Delivery' class='btn-cancel'>
-                                              </form>";
+                                        // Form 1: Claim Delivery
+                                        echo "<form method='POST' action='planner.php?month=$month&year=$year' style='display:inline;'>";
+                                        echo csrf_token_field();   // ← Added CSRF token here
+                                        echo "<input type='hidden' name='delivery_id' value='{$delivery['id_delivery']}'>";
+                                        echo "<input type='submit' name='btnClaimDelivery' value='Mark as Delivered' class='btn-claim'>";
+                                        echo "</form>";
+                                        // Form 2: Cancel Delivery
+                                        echo "<form method='POST' action='planner.php?month=$month&year=$year' style='display:inline; margin-left:5px;'>";
+                                        echo csrf_token_field();   // ← Added CSRF token here
+                                        echo "<input type='hidden' name='delivery_id' value='{$delivery['id_delivery']}'>";
+                                        echo "<input type='submit' name='btnCancelDelivery' value='Cancel Delivery' class='btn-cancel'>";
+                                        echo "</form>";
                                     }
                                     echo "</div>";
                                 }
@@ -371,7 +378,6 @@ $months = [
                                     </form>
                                     <form method="POST" action="planner.php?month=${currentMonth}&year=${currentYear}" style="display:inline; margin-left:5px;">
                                     <?php echo csrf_token_field(); ?>
-                                    
                                         <input type="hidden" name="delivery_id" value="${d.id_delivery}">
                                         <input type="submit" name="btnCancelDelivery" value="Cancel Delivery" class="btn-cancel">
                                     </form>
