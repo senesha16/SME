@@ -201,7 +201,7 @@ if (isset($_POST["btnResetPassword"])) {
                     <i class="fas fa-boxes"></i>
                     <span>View Stock</span>
                 </a>
-                <a href="adjust_stock.php" class="nav-item <?php echo basename($_SERVER['PHP_SELF']) == 'adjust_stock.php' ? 'active' : ''; ?>">
+                <a href="adjust_stocks.php" class="nav-item <?php echo basename($_SERVER['PHP_SELF']) == 'adjust_stocks.php' ? 'active' : ''; ?>">
                     <i class="fas fa-edit"></i>
                     <span>Adjust Stock</span>
                 </a>
