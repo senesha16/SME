@@ -222,7 +222,7 @@ if (isset($_POST["btnResetPassword"])) {
         <main class="main-content">
             <div class="page-header">
                 <div class="page-title">
-                    <h1><i class="fas fa-user"></i> My AccountZZZZZZZZZZ</h1>
+                    <h1><i class="fas fa-user"></i> My Account</h1>
                     <p>Manage your profile and account settings</p>
                 </div>
                 <?php if ($notify): ?>
