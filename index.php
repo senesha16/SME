@@ -11,7 +11,7 @@
         <div class="nav-container">
             <div class="nav-logo">
                 <img src="sabang_logo.png" alt="Logo" class="logo-img">
-                <span class="nav-title">SMEEEEEEZZZ System</span>
+                <span class="nav-title">SMEss System</span>
             </div>
             <div class="nav-links">
                 <!-- Login/Register removed - direct access to system -->
@@ -22,7 +22,7 @@
     <main class="hero-section">
         <div class="hero-content">
             <div class="hero-text">
-                <h1 class="hero-title">SME Managements <span class="highlight">Simplified</span></h1>
+                <h1 class="hero-title">SMEt Managements <span class="highlight">Simplified</span></h1>
                 <p class="hero-description">
                     Manage me your business permits and operations with ease. 
                     Simple, secure, and built for small businesses.
