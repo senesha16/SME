@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SME Management System</title>
+    <title>SMEEEEEEZZZ Management System</title>
     <link rel="stylesheet" href="land.css">
 </head>
 <body>
