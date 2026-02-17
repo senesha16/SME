@@ -11,7 +11,7 @@
         <div class="nav-container">
             <div class="nav-logo">
                 <img src="sabang_logo.png" alt="Logo" class="logo-img">
-                <span class="nav-title">SME System</span>
+                <span class="nav-title">SMEEEEEEZZZ System</span>
             </div>
             <div class="nav-links">
                 <!-- Login/Register removed - direct access to system -->
