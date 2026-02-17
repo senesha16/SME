@@ -238,10 +238,7 @@ while ($cat_row = mysqli_fetch_assoc($category_query)) {
     <title>View Stock - SME Dashboard</title>
     <link rel="stylesheet" href="user-stock.css">
     <link rel="stylesheet" href="user-dashboard.css">
-    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" 
-      rel="stylesheet" 
-      integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" 
-      crossorigin="anonymous">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         .page-header {
             background: linear-gradient(135deg, #E62727 0%, #c62d2d 100%);

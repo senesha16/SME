@@ -111,10 +111,8 @@ if ($selected_item_id && isset($items[$selected_item_id])) {
     <title>Adjust Stock - SME Dashboard</title>
     <link rel="stylesheet" href="user-stock.css">
     <link rel="stylesheet" href="user-dashboard.css">
-    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" 
-      rel="stylesheet" 
-      integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" 
-      crossorigin="anonymous">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
     <script>
         function allowNumbersOnly(event) {
             var char = String.fromCharCode(event.which);
