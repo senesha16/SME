@@ -276,6 +276,7 @@ if ($view_mode == "analytics") {
             <div class="transaction-section">
                 <div class="section-title"><i class="fas fa-shopping-cart"></i> Add Items to Cart</div>
                 <form method="POST" class="add-item-form">
+                    <?php echo csrf_token_field(); ?>
                     <div class="form-row">
                         <div class="form-group">
                             <label><i class="fas fa-tag"></i> Select Item</label>
@@ -325,6 +326,7 @@ if ($view_mode == "analytics") {
                                 </div>
                             </div>
                             <form method="POST" class="remove-form">
+                                <?php echo csrf_token_field(); ?>
                                 <input type="hidden" name="id_item" value="<?php echo $id; ?>">
                                 <button type="submit" name="btnRemoveFromCart" class="remove-btn" title="Remove"><i class="fas fa-trash"></i></button>
                             </form>
@@ -337,6 +339,7 @@ if ($view_mode == "analytics") {
                             <span class="total-value">₱<?php echo number_format($total, 2); ?></span>
                         </div>
                         <form method="POST">
+                            <?php echo csrf_token_field(); ?>
                             <button type="submit" name="btnComplete" class="btn-complete"><i class="fas fa-check-circle"></i> Complete Transaction</button>
                         </form>
                     </div>

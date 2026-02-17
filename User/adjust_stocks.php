@@ -461,6 +461,7 @@ if ($selected_item_id && isset($items[$selected_item_id])) {
             </div>
             
             <form method="POST" id="item-selection-form">
+                <?php echo csrf_token_field(); ?>
                 <?php if (empty($items)): ?>
                     <div class="empty-state">
                         <i class="fas fa-inbox"></i>
@@ -556,6 +557,7 @@ if ($selected_item_id && isset($items[$selected_item_id])) {
 
                 <div class="adjustment-form">
                     <form method="POST" onsubmit="return validateForm()">
+                        <?php echo csrf_token_field(); ?>
                         <input type="hidden" name="pack_item_id" value="<?php echo htmlspecialchars($selected_item_id); ?>">
                         
                         <div class="form-row">

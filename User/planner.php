@@ -281,6 +281,7 @@ $months = [
             <div class="form-section">
                 <h3>Add New Delivery</h3>
                 <form method="POST">
+                    <?php echo csrf_token_field(); ?>
                     <table>
                         <tr>
                             <td>
@@ -360,10 +361,13 @@ $months = [
                     if (d.status === 'pending') {
                         html += `<div class="actions">
                                     <form method="POST" action="planner.php?month=${currentMonth}&year=${currentYear}" style="display:inline;">
+                                    <?php echo csrf_token_field(); ?>
                                         <input type="hidden" name="delivery_id" value="${d.id_delivery}">
                                         <input type="submit" name="btnClaimDelivery" value="Mark as Delivered" class="btn-claim">
                                     </form>
                                     <form method="POST" action="planner.php?month=${currentMonth}&year=${currentYear}" style="display:inline; margin-left:5px;">
+                                    <?php echo csrf_token_field(); ?>
+                                    
                                         <input type="hidden" name="delivery_id" value="${d.id_delivery}">
                                         <input type="submit" name="btnCancelDelivery" value="Cancel Delivery" class="btn-cancel">
                                     </form>

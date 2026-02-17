@@ -135,6 +135,7 @@ if (isset($_POST["btnConfirmDelete"])) {
             <h3>Confirm Delete - Welcome, <?php echo htmlspecialchars($full_name); ?></h3>
             <h4>Are you sure you want to delete the item: <?php echo htmlspecialchars($item_name); ?>?</h4>
             <form method="POST">
+                <?php echo csrf_token_field(); ?>
                 <input type="hidden" name="id_item" value="<?php echo htmlspecialchars($id_item); ?>">
                 <input type="submit" name="btnConfirmDelete" value="Delete" class="action-btn delete-btn">
                 <a href="view_stock.php" class="action-btn cancel-btn">Cancel</a>

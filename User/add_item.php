@@ -412,6 +412,7 @@ if (isset($_POST["btnAddItem"])) {
 
         <!-- Form -->
         <form method="POST">
+            <?php echo csrf_token_field(); ?>
             <div class="section">
                 <div class="section-title">
                     <i class="fas fa-info-circle"></i>

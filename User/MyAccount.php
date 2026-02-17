@@ -249,6 +249,7 @@ if (isset($_POST["btnResetPassword"])) {
                                 <?php endif; ?>
                             </div>
                             <form method="POST" enctype="multipart/form-data" class="upload-form">
+                                <?php echo csrf_token_field(); ?>
                                 <div class="file-input-wrapper">
                                     <input type="file" name="profile_pic" id="profile_pic" accept="image/*" required>
                                     <label for="profile_pic" class="file-input-label">
@@ -314,6 +315,7 @@ if (isset($_POST["btnResetPassword"])) {
                             <h3><i class="fas fa-user-edit"></i> Personal Information</h3>
                         </div>
                         <form method="POST" class="info-form">
+                            <?php echo csrf_token_field(); ?>
                             <div class="form-grid">
                                 <div class="form-group">
                                     <label class="form-label">First Name</label>
@@ -426,6 +428,7 @@ if (isset($_POST["btnResetPassword"])) {
                         </div>
                         <div class="password-content">
                             <form method="POST" class="password-form">
+                                <?php echo csrf_token_field(); ?>
                                 <div class="form-grid">
                                     <div class="form-group">
                                         <label class="form-label">New Password</label>
